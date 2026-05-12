@@ -4,18 +4,21 @@
     "notion-dark": "#191919",
   };
 
-  const POMODORO_MODE_META = {
+  const POMODORO_RUNTIME_MODES = {
     focus: {
-      label: "Focus",
-      hint: "bloco atual",
+      label: "Pomodoro",
+      hint: "sessao de foco",
+      inputKey: "focusLength",
     },
-    break: {
-      label: "Break",
-      hint: "intervalo atual",
+    short: {
+      label: "Short Break",
+      hint: "pausa curta",
+      inputKey: "shortBreakLength",
     },
-    paused: {
-      label: "Paused",
-      hint: "aguardando retomada",
+    long: {
+      label: "Long Break",
+      hint: "pausa longa",
+      inputKey: "longBreakLength",
     },
   };
 
@@ -51,6 +54,12 @@
         { value: "mono", label: "Mono" },
       ],
     },
+    {
+      key: "blur",
+      label: "Blur no card",
+      type: "checkbox",
+      section: "Aparência",
+    },
     { key: "bg", label: "Fundo do widget", type: "color", section: "Aparência" },
     { key: "text", label: "Texto", type: "color", section: "Aparência" },
     { key: "accent", label: "Accent", type: "color", section: "Aparência" },
@@ -78,40 +87,40 @@
 
   const WIDGETS = {
     pomodoro: {
-      name: "Pomodoro Status",
-      kicker: "Status Widget",
-      description: "Status visual de uma sessao de foco. O embed so exibe o estado atual.",
+      name: "Pomodoro",
+      kicker: "Interactive Widget",
+      interactive: true,
+      description: "Timer interativo para iniciar, pausar, resetar e ajustar tempos no proprio embed.",
       defaults: {
         canvas: "notion-light",
         style: "soft",
         font: "grotesk",
+        blur: true,
         bg: "#121716",
         text: "#f4efe8",
         accent: "#c8ff62",
         radius: 28,
         scale: 1,
-        title: "Deep Work",
-        duration: 25,
-        breakLength: 5,
-        mode: "focus",
-        remaining: "24:59",
-        progress: 72,
-        note: "Proxima pausa em 5 min",
+        title: "Pomofocus",
+        focusLength: 25,
+        shortBreakLength: 5,
+        longBreakLength: 15,
+        initialMode: "focus",
       },
       fields: [
         { key: "title", label: "Título", type: "text", section: "Conteúdo" },
         {
-          key: "duration",
-          label: "Bloco de foco (min)",
+          key: "focusLength",
+          label: "Pomodoro (min)",
           type: "number",
           section: "Conteúdo",
-          min: 10,
+          min: 1,
           max: 90,
           step: 1,
         },
         {
-          key: "breakLength",
-          label: "Pausa (min)",
+          key: "shortBreakLength",
+          label: "Short Break (min)",
           type: "number",
           section: "Conteúdo",
           min: 1,
@@ -119,48 +128,37 @@
           step: 1,
         },
         {
-          key: "mode",
-          label: "Modo exibido",
+          key: "longBreakLength",
+          label: "Long Break (min)",
+          type: "number",
+          section: "Conteúdo",
+          min: 1,
+          max: 60,
+          step: 1,
+        },
+        {
+          key: "initialMode",
+          label: "Modo inicial",
           type: "select",
           section: "Conteúdo",
           options: [
-            { value: "focus", label: "Focus" },
-            { value: "break", label: "Break" },
-            { value: "paused", label: "Paused" },
+            { value: "focus", label: "Pomodoro" },
+            { value: "short", label: "Short Break" },
+            { value: "long", label: "Long Break" },
           ],
-        },
-        {
-          key: "remaining",
-          label: "Tempo exibido",
-          type: "text",
-          section: "Conteúdo",
-        },
-        {
-          key: "progress",
-          label: "Progresso",
-          type: "range",
-          section: "Conteúdo",
-          min: 0,
-          max: 100,
-          step: 1,
-          suffix: "%",
-        },
-        {
-          key: "note",
-          label: "Linha auxiliar",
-          type: "text",
-          section: "Conteúdo",
         },
       ],
     },
     countdown: {
       name: "Countdown",
       kicker: "Deadline Widget",
+      interactive: false,
       description: "Contagem regressiva passiva para prazos, lancamentos e marcos.",
       defaults: {
         canvas: "notion-light",
         style: "glass",
         font: "grotesk",
+        blur: true,
         bg: "#10161c",
         text: "#eef5fb",
         accent: "#7bddff",
@@ -189,11 +187,13 @@
     quote: {
       name: "Daily Note",
       kicker: "Editorial Widget",
+      interactive: false,
       description: "Bloco editorial estatico para mantra, instrução curta ou frase do dia.",
       defaults: {
         canvas: "notion-light",
         style: "brutal",
         font: "grotesk",
+        blur: true,
         bg: "#15100d",
         text: "#fff3ea",
         accent: "#ffb581",
@@ -240,9 +240,11 @@
     const openEmbedLink = document.getElementById("open-embed-link");
     const widgetName = document.getElementById("widget-name");
     const widgetKicker = document.getElementById("widget-kicker");
+    const embedBehaviorNote = document.getElementById("embed-behavior-note");
 
     widgetName.textContent = WIDGETS[widgetKey].name;
     widgetKicker.textContent = WIDGETS[widgetKey].kicker;
+    embedBehaviorNote.textContent = getEmbedBehaviorCopy(widgetKey);
 
     form.innerHTML = renderForm(widgetKey, state);
 
@@ -313,6 +315,9 @@
     shell.style.setProperty("--widget-radius", `${state.radius}px`);
     shell.style.setProperty("--widget-scale", String(state.scale));
 
+    if (widgetKey === "pomodoro") {
+      hydratePomodoro(root, state);
+    }
     if (widgetKey === "countdown") {
       hydrateCountdown(root, state);
     }
@@ -329,6 +334,10 @@
     getAllFields(widgetKey).forEach((field) => {
       const raw = params.get(field.key);
       if (raw === null) {
+        return;
+      }
+      if (field.type === "checkbox") {
+        state[field.key] = raw === "true" || raw === "1";
         return;
       }
       if (field.type === "number" || field.type === "range") {
@@ -384,18 +393,34 @@
       return "Ajustes de visual compartilhados no link.";
     }
     if (sectionName === "Conteúdo") {
+      if (WIDGETS[widgetKey].interactive) {
+        return "Esse widget continua funcional no Notion. Defina aqui os tempos iniciais e o visual do card.";
+      }
       return "No Notion o widget é só leitura. Ajuste aqui tudo o que aparece no embed.";
     }
     return WIDGETS[widgetKey].description;
   }
 
   function isCompactField(field) {
-    return ["color", "number", "range", "select", "datetime-local"].includes(field.type);
+    return ["checkbox", "color", "number", "range", "select", "datetime-local"].includes(field.type);
   }
 
   function renderField(field, value) {
     const safeValue = escapeHtml(String(value ?? ""));
-    const fieldClass = field.type === "textarea" ? "field field--wide" : "field";
+    const fieldClass =
+      field.type === "textarea"
+        ? "field field--wide"
+        : field.type === "checkbox"
+          ? "field field--toggle"
+          : "field";
+    if (field.type === "checkbox") {
+      return `
+        <label class="${fieldClass}">
+          <span class="field-label">${field.label}</span>
+          <input type="checkbox" name="${field.key}" ${value ? "checked" : ""} />
+        </label>
+      `;
+    }
     if (field.type === "select") {
       return `
         <label class="${fieldClass}">
@@ -467,6 +492,10 @@
         return;
       }
       let value = input.value;
+      if (field.type === "checkbox") {
+        state[field.key] = input.checked;
+        return;
+      }
       if (value === "") {
         state[field.key] = defaults[field.key];
         return;
@@ -494,33 +523,80 @@
   }
 
   function renderWidget(widgetKey, state) {
-    const shellClass = `widget-shell widget-style--${state.style} font-${state.font}`;
+    const blurClass = state.blur ? "widget-blur-on" : "widget-blur-off";
+    const shellClass = `widget-shell ${blurClass} widget-style--${state.style} font-${state.font}`;
     if (widgetKey === "pomodoro") {
-      const modeMeta = getPomodoroModeMeta(state.mode);
-      const remaining = normalizeTimerValue(state.remaining);
-      const progress = normalizeProgress(state.progress);
+      const initialMode = getPomodoroMode(state.initialMode);
+      const focusLength = sanitizePomodoroMinutes("focus", state.focusLength, 25);
+      const shortBreakLength = sanitizePomodoroMinutes("short", state.shortBreakLength, 5);
+      const longBreakLength = sanitizePomodoroMinutes("long", state.longBreakLength, 15);
       return `
         <section class="${shellClass}">
-          <div class="widget-frame">
+          <div
+            class="widget-frame widget-frame--pomodoro"
+            data-pomodoro-app
+            data-initial-mode="${initialMode}"
+            data-focus-length="${focusLength}"
+            data-short-length="${shortBreakLength}"
+            data-long-length="${longBreakLength}"
+          >
             <header class="widget-head">
               <div class="widget-meta">
-                <span class="widget-kicker">focus status</span>
+                <span class="widget-kicker">interactive pomodoro</span>
                 <h1 class="widget-title">${escapeHtml(state.title)}</h1>
               </div>
-              <span class="widget-chip">${state.duration}/${state.breakLength}</span>
+              <span class="widget-chip">interactive</span>
             </header>
-            <div class="pomodoro-layout">
-              <div class="ring" style="--progress: ${progress}">
-                <div class="ring-time">${escapeHtml(remaining)}</div>
-              </div>
-              <div class="pomodoro-details">
-                <div class="metric-line">
-                  <span class="metric-strong">${modeMeta.label}</span>
-                  <span class="metric-soft">${modeMeta.hint}</span>
-                </div>
-                <div class="widget-divider"></div>
-                <p class="widget-footnote">${escapeHtml(state.note)}</p>
-              </div>
+            <div class="pomodoro-tabs" role="tablist" aria-label="Pomodoro modes">
+              ${renderPomodoroTab("focus", "Pomodoro", initialMode === "focus")}
+              ${renderPomodoroTab("short", "Short Break", initialMode === "short")}
+              ${renderPomodoroTab("long", "Long Break", initialMode === "long")}
+            </div>
+            <div class="pomodoro-timer" data-pomodoro-display>25:00</div>
+            <p class="pomodoro-status" data-pomodoro-status>Pronto para começar.</p>
+            <div class="pomodoro-actions">
+              <button class="pomodoro-button pomodoro-button-primary" type="button" data-pomodoro-toggle>
+                Start
+              </button>
+              <button class="pomodoro-button" type="button" data-pomodoro-reset>
+                Reset
+              </button>
+            </div>
+            <div class="widget-divider"></div>
+            <div class="pomodoro-config">
+              <label class="pomodoro-setting">
+                <span>Pomodoro</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="90"
+                  step="1"
+                  value="${focusLength}"
+                  data-pomodoro-length="focus"
+                />
+              </label>
+              <label class="pomodoro-setting">
+                <span>Short Break</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="30"
+                  step="1"
+                  value="${shortBreakLength}"
+                  data-pomodoro-length="short"
+                />
+              </label>
+              <label class="pomodoro-setting">
+                <span>Long Break</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="60"
+                  step="1"
+                  value="${longBreakLength}"
+                  data-pomodoro-length="long"
+                />
+              </label>
             </div>
           </div>
         </section>
@@ -576,6 +652,141 @@
     `;
   }
 
+  function hydratePomodoro(root, state) {
+    const app = root.querySelector("[data-pomodoro-app]");
+    if (!app) {
+      return;
+    }
+
+    const refs = {
+      display: app.querySelector("[data-pomodoro-display]"),
+      status: app.querySelector("[data-pomodoro-status]"),
+      toggle: app.querySelector("[data-pomodoro-toggle]"),
+      reset: app.querySelector("[data-pomodoro-reset]"),
+      tabs: Array.from(app.querySelectorAll("[data-pomodoro-tab]")),
+      inputs: {
+        focus: app.querySelector('[data-pomodoro-length="focus"]'),
+        short: app.querySelector('[data-pomodoro-length="short"]'),
+        long: app.querySelector('[data-pomodoro-length="long"]'),
+      },
+    };
+
+    const runtime = {
+      activeMode: getPomodoroMode(state.initialMode),
+      durations: {
+        focus: sanitizePomodoroMinutes("focus", state.focusLength, 25),
+        short: sanitizePomodoroMinutes("short", state.shortBreakLength, 5),
+        long: sanitizePomodoroMinutes("long", state.longBreakLength, 15),
+      },
+      remainingSeconds: 0,
+      isRunning: false,
+      intervalId: null,
+    };
+
+    runtime.remainingSeconds = runtime.durations[runtime.activeMode] * 60;
+
+    const render = () => {
+      refs.display.textContent = formatPomodoroTime(runtime.remainingSeconds);
+      refs.status.textContent = getPomodoroStatusText(runtime);
+      refs.toggle.textContent = getPomodoroToggleLabel(runtime);
+      refs.tabs.forEach((tab) => {
+        const mode = tab.dataset.pomodoroTab;
+        const isActive = mode === runtime.activeMode;
+        tab.classList.toggle("is-active", isActive);
+        tab.setAttribute("aria-pressed", String(isActive));
+      });
+    };
+
+    const clearTicker = () => {
+      if (runtime.intervalId !== null) {
+        window.clearInterval(runtime.intervalId);
+        runtime.intervalId = null;
+      }
+    };
+
+    const resetActiveMode = () => {
+      runtime.remainingSeconds = runtime.durations[runtime.activeMode] * 60;
+      runtime.isRunning = false;
+      clearTicker();
+      render();
+    };
+
+    const ensureTicker = () => {
+      if (runtime.intervalId !== null) {
+        return;
+      }
+      runtime.intervalId = window.setInterval(() => {
+        if (!runtime.isRunning) {
+          return;
+        }
+        if (runtime.remainingSeconds <= 0) {
+          runtime.isRunning = false;
+          clearTicker();
+          render();
+          return;
+        }
+        runtime.remainingSeconds -= 1;
+        if (runtime.remainingSeconds <= 0) {
+          runtime.remainingSeconds = 0;
+          runtime.isRunning = false;
+          clearTicker();
+        }
+        render();
+      }, 1000);
+    };
+
+    refs.tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        runtime.activeMode = getPomodoroMode(tab.dataset.pomodoroTab);
+        resetActiveMode();
+      });
+    });
+
+    refs.toggle.addEventListener("click", () => {
+      if (runtime.remainingSeconds <= 0) {
+        runtime.remainingSeconds = runtime.durations[runtime.activeMode] * 60;
+      }
+      runtime.isRunning = !runtime.isRunning;
+      if (runtime.isRunning) {
+        ensureTicker();
+      } else {
+        clearTicker();
+      }
+      render();
+    });
+
+    refs.reset.addEventListener("click", () => {
+      resetActiveMode();
+    });
+
+    Object.entries(refs.inputs).forEach(([mode, input]) => {
+      const syncDuration = (shouldCommitBlank) => {
+        const rawValue = input.value.trim();
+        if (!rawValue) {
+          if (shouldCommitBlank) {
+            input.value = String(runtime.durations[mode]);
+          }
+          return;
+        }
+
+        const nextMinutes = sanitizePomodoroMinutes(mode, rawValue, runtime.durations[mode]);
+        runtime.durations[mode] = nextMinutes;
+        input.value = String(nextMinutes);
+        if (mode === runtime.activeMode) {
+          resetActiveMode();
+          return;
+        }
+        render();
+      };
+
+      input.addEventListener("input", () => syncDuration(false));
+      input.addEventListener("change", () => syncDuration(true));
+      input.addEventListener("blur", () => syncDuration(true));
+    });
+
+    render();
+  }
+
   function hydrateCountdown(root, state) {
     const target = new Date(state.target).getTime();
     const nodes = {
@@ -603,21 +814,75 @@
     window.setInterval(render, 1000);
   }
 
-  function getPomodoroModeMeta(mode) {
-    return POMODORO_MODE_META[mode] || POMODORO_MODE_META.focus;
+  function getPomodoroMode(mode) {
+    return Object.prototype.hasOwnProperty.call(POMODORO_RUNTIME_MODES, mode) ? mode : "focus";
   }
 
-  function normalizeTimerValue(value) {
-    const candidate = String(value ?? "").trim();
-    return /^\d{1,3}:\d{2}$/.test(candidate) ? candidate : "25:00";
+  function sanitizePomodoroMinutes(mode, value, fallback) {
+    const maxByMode = {
+      focus: 90,
+      short: 30,
+      long: 60,
+    };
+    return sanitizeMinutes(value, fallback, maxByMode[mode] || 120);
   }
 
-  function normalizeProgress(value) {
+  function sanitizeMinutes(value, fallback, max = 120) {
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) {
-      return 0;
+      return fallback;
     }
-    return Math.min(100, Math.max(0, numeric));
+    return Math.min(max, Math.max(1, Math.round(numeric)));
+  }
+
+  function formatPomodoroTime(totalSeconds) {
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  }
+
+  function getPomodoroStatusText(runtime) {
+    const modeMeta = POMODORO_RUNTIME_MODES[runtime.activeMode];
+    if (runtime.remainingSeconds <= 0) {
+      return `${modeMeta.label} concluído.`;
+    }
+    if (runtime.isRunning) {
+      return `${modeMeta.hint} em andamento.`;
+    }
+    if (runtime.remainingSeconds < runtime.durations[runtime.activeMode] * 60) {
+      return `${modeMeta.hint} pausado.`;
+    }
+    return `${modeMeta.hint} pronto para começar.`;
+  }
+
+  function getPomodoroToggleLabel(runtime) {
+    if (runtime.isRunning) {
+      return "Pause";
+    }
+    if (runtime.remainingSeconds < runtime.durations[runtime.activeMode] * 60) {
+      return "Resume";
+    }
+    return "Start";
+  }
+
+  function getEmbedBehaviorCopy(widgetKey) {
+    if (WIDGETS[widgetKey].interactive) {
+      return "No Notion esse widget continua funcional. Start, pause, reset e ajuste de tempo acontecem no próprio card.";
+    }
+    return "No Notion esse widget é só leitura. Mudanças de tempo, estado, texto e visual são feitas aqui no editor.";
+  }
+
+  function renderPomodoroTab(mode, label, isActive) {
+    return `
+      <button
+        class="pomodoro-tab ${isActive ? "is-active" : ""}"
+        type="button"
+        data-pomodoro-tab="${mode}"
+        aria-pressed="${isActive ? "true" : "false"}"
+      >
+        ${label}
+      </button>
+    `;
   }
 
   function escapeHtml(value) {

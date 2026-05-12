@@ -323,7 +323,8 @@ code {
 }
 
 .preview-pomodoro {
-  grid-template-columns: 80px 1fr;
+  align-content: space-between;
+  min-height: 140px;
 }
 
 .mini-ring {
@@ -350,6 +351,61 @@ code {
 .mini-stack strong {
   font-size: 2rem;
   letter-spacing: -0.05em;
+}
+
+.mini-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mini-tabs span,
+.mini-pomodoro-stack span {
+  font-family: var(--font-mono);
+}
+
+.mini-tabs span {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.mini-tabs .is-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.mini-pomodoro-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.mini-pomodoro-stack strong {
+  font-size: 3rem;
+  letter-spacing: -0.08em;
+  line-height: 0.88;
+}
+
+.mini-pomodoro-stack small {
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.mini-pomodoro-stack span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .preview-countdown {
@@ -451,6 +507,15 @@ code {
   gap: 8px;
 }
 
+.field--toggle {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .field--wide {
   grid-column: 1 / -1;
 }
@@ -466,7 +531,7 @@ button {
   font: inherit;
 }
 
-input,
+input:not([type="checkbox"]),
 select,
 textarea {
   width: 100%;
@@ -480,12 +545,51 @@ textarea {
     background-color 160ms ease;
 }
 
-input:focus,
+input:not([type="checkbox"]):focus,
 select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--line-strong);
   background: rgba(255, 255, 255, 0.07);
+}
+
+input[type="checkbox"] {
+  appearance: none;
+  position: relative;
+  width: 50px;
+  height: 30px;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--text);
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+
+input[type="checkbox"]:checked {
+  border-color: color-mix(in srgb, var(--accent) 58%, transparent);
+  background: color-mix(in srgb, var(--accent) 48%, rgba(255, 255, 255, 0.08));
+}
+
+input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
+  background: #050707;
 }
 
 textarea {
@@ -680,6 +784,10 @@ input[type="range"]::-moz-range-thumb {
   pointer-events: none;
 }
 
+.widget-blur-off::before {
+  opacity: 0.32;
+}
+
 .widget-style--soft {
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--widget-accent) 24%, transparent), transparent 28%),
@@ -707,6 +815,16 @@ input[type="range"]::-moz-range-thumb {
 
 .widget-style--glass::before {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 38%);
+}
+
+.widget-blur-off.widget-style--soft,
+.widget-blur-off.widget-style--glass,
+.widget-blur-off.widget-style--brutal {
+  box-shadow: none;
+}
+
+.widget-blur-off.widget-style--glass {
+  backdrop-filter: none;
 }
 
 .widget-style--brutal {
@@ -765,6 +883,132 @@ input[type="range"]::-moz-range-thumb {
   color: var(--widget-text);
   font-family: var(--font-mono);
   font-size: 0.74rem;
+}
+
+.widget-blur-on .widget-chip,
+.widget-blur-on .countdown-cell,
+.widget-blur-on .pomodoro-tab,
+.widget-blur-on .pomodoro-button,
+.widget-blur-on .pomodoro-setting input {
+  backdrop-filter: blur(14px);
+}
+
+.widget-blur-off .widget-chip,
+.widget-blur-off .countdown-cell,
+.widget-blur-off .pomodoro-tab,
+.widget-blur-off .pomodoro-button,
+.widget-blur-off .pomodoro-setting input {
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.widget-frame--pomodoro {
+  gap: 20px;
+}
+
+.pomodoro-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pomodoro-tab,
+.pomodoro-button {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--widget-text);
+}
+
+.pomodoro-tab {
+  min-height: 48px;
+  padding: 0 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.pomodoro-tab:hover,
+.pomodoro-button:hover {
+  transform: translateY(-1px);
+}
+
+.pomodoro-tab.is-active {
+  background: color-mix(in srgb, var(--accent) 88%, rgba(255, 255, 255, 0.08));
+  color: #091010;
+  border-color: transparent;
+}
+
+.pomodoro-timer {
+  font-size: clamp(4.8rem, 16vw, 7.6rem);
+  font-weight: 700;
+  letter-spacing: -0.1em;
+  line-height: 0.9;
+  text-align: center;
+}
+
+.pomodoro-status {
+  margin: 0;
+  color: color-mix(in srgb, var(--widget-text) 68%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.pomodoro-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pomodoro-button {
+  min-height: 58px;
+  padding: 0 24px;
+  cursor: pointer;
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.pomodoro-button-primary {
+  min-width: 174px;
+  background: var(--widget-text);
+  color: var(--widget-bg);
+}
+
+.pomodoro-config {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pomodoro-setting {
+  display: grid;
+  gap: 8px;
+}
+
+.pomodoro-setting span {
+  color: color-mix(in srgb, var(--widget-text) 62%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pomodoro-setting input {
+  text-align: center;
+  font-size: 1.08rem;
+  font-weight: 700;
 }
 
 .pomodoro-layout {
@@ -897,7 +1141,8 @@ input[type="range"]::-moz-range-thumb {
   .editor-layout,
   .preview-countdown,
   .countdown-grid,
-  .pomodoro-layout {
+  .pomodoro-layout,
+  .pomodoro-config {
     grid-template-columns: 1fr;
   }
 
