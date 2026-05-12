@@ -18,6 +18,15 @@
   --font-sans: "Space Grotesk", sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
   --font-serif: "Fraunces", serif;
+  --font-sora: "Sora", sans-serif;
+  --font-manrope: "Manrope", sans-serif;
+  --font-outfit: "Outfit", sans-serif;
+  --font-syne: "Syne", sans-serif;
+  --font-tight: "Inter Tight", sans-serif;
+  --font-archivo: "Archivo Narrow", sans-serif;
+  --font-bebas: "Bebas Neue", sans-serif;
+  --font-playfair: "Playfair Display", serif;
+  --font-cormorant: "Cormorant Garamond", serif;
 }
 
 * {
@@ -1412,6 +1421,42 @@ input[type="range"]::-moz-range-thumb {
 
 .font-serif {
   --widget-font: var(--font-serif);
+}
+
+.font-sora {
+  --widget-font: var(--font-sora);
+}
+
+.font-manrope {
+  --widget-font: var(--font-manrope);
+}
+
+.font-outfit {
+  --widget-font: var(--font-outfit);
+}
+
+.font-syne {
+  --widget-font: var(--font-syne);
+}
+
+.font-intertight {
+  --widget-font: var(--font-tight);
+}
+
+.font-archivo {
+  --widget-font: var(--font-archivo);
+}
+
+.font-bebas {
+  --widget-font: var(--font-bebas);
+}
+
+.font-playfair {
+  --widget-font: var(--font-playfair);
+}
+
+.font-cormorant {
+  --widget-font: var(--font-cormorant);
 }
 
 @media (max-width: 1080px) {
