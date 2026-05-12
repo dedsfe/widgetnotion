@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor | Widgets Notion Studio</title>
+    <meta
+      name="description"
+      content="Editor de widgets com preview ao vivo e geração de link para embed no Notion."
+    />
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body class="page page-editor" data-page="editor">
+    <div class="ambient ambient-left"></div>
+    <div class="ambient ambient-right"></div>
+
+    <main class="editor-shell">
+      <header class="editor-header">
+        <a class="back-link" href="index.html">Voltar</a>
+        <div class="editor-header-copy">
+          <p class="eyebrow" id="widget-kicker">Widget</p>
+          <h1 id="widget-name">Editor</h1>
+        </div>
+        <button class="primary-button" id="copy-url-button" type="button">
+          Copiar URL
+        </button>
+      </header>
+
+      <section class="editor-layout">
+        <aside class="control-panel">
+          <div class="panel-block">
+            <div class="panel-heading">
+              <h2>Embed</h2>
+              <p>Cole a URL abaixo no bloco <code>/embed</code> do Notion.</p>
+            </div>
+            <label class="field" for="embed-url">
+              <span class="field-label">URL pública</span>
+              <input id="embed-url" type="text" readonly />
+            </label>
+            <a class="secondary-link" id="open-embed-link" target="_blank" rel="noreferrer">
+              Abrir a página do widget
+            </a>
+          </div>
+
+          <form id="widget-form" class="panel-form" novalidate></form>
+        </aside>
+
+        <section class="preview-panel" aria-label="Preview do widget">
+          <div class="preview-toolbar">
+            <div>
+              <p class="preview-label">Preview em tempo real</p>
+              <h2>Seu widget publicado</h2>
+            </div>
+            <p class="preview-note">
+              O preview usa a mesma URL gerada para o embed.
+            </p>
+          </div>
+
+          <div class="preview-stage">
+            <div class="preview-frame-shell">
+              <iframe
+                id="preview-frame"
+                title="Preview do widget"
+                loading="eager"
+              ></iframe>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="assets/app.js"></script>
+  </body>
+</html>

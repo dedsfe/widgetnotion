@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widgets Notion Studio</title>
+    <meta
+      name="description"
+      content="Escolha um widget, personalize o visual e copie a URL para embutir no Notion."
+    />
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body class="page page-home" data-page="home">
+    <div class="ambient ambient-left"></div>
+    <div class="ambient ambient-right"></div>
+
+    <main class="home-shell">
+      <header class="home-header">
+        <p class="eyebrow">Widgets Notion Studio</p>
+        <div class="header-meta">
+          <span>HTML + CSS + JS</span>
+          <span>Sem backend</span>
+          <span>Pronto para GitHub Pages</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="hero-lead">Selecione, customize e copie.</p>
+          <h1>Uma base simples para gerar widgets embutíveis no Notion.</h1>
+          <p class="hero-text">
+            Cada card leva para um editor com preview em tempo real e uma URL pública
+            pronta para usar no <code>/embed</code>.
+          </p>
+        </div>
+
+        <div class="hero-note">
+          <p>Fluxo</p>
+          <ol>
+            <li>Escolha o widget.</li>
+            <li>Ajuste o design e o conteúdo.</li>
+            <li>Copie o link e cole no Notion.</li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="widget-grid" aria-label="Tipos de widget">
+        <a class="widget-card widget-card-pomodoro" href="editor.html?widget=pomodoro">
+          <div class="widget-card-top">
+            <span class="card-tag">Focus Widget</span>
+            <span class="card-arrow">Abrir editor</span>
+          </div>
+          <div class="widget-card-body">
+            <div class="widget-card-copy">
+              <h2>Pomodoro</h2>
+              <p>
+                Ciclo de foco e pausa com visual de display ambiente para dashboard
+                pessoal.
+              </p>
+            </div>
+            <div class="widget-card-preview preview-pomodoro">
+              <div class="mini-ring"></div>
+              <div class="mini-stack">
+                <span>Focus Sprint</span>
+                <strong>24:59</strong>
+                <small>break em 5 min</small>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <a class="widget-card widget-card-countdown" href="editor.html?widget=countdown">
+          <div class="widget-card-top">
+            <span class="card-tag">Launch Widget</span>
+            <span class="card-arrow">Abrir editor</span>
+          </div>
+          <div class="widget-card-body">
+            <div class="widget-card-copy">
+              <h2>Countdown</h2>
+              <p>
+                Contagem regressiva limpa para lançamentos, metas internas e marcos de
+                projeto.
+              </p>
+            </div>
+            <div class="widget-card-preview preview-countdown">
+              <div><strong>12</strong><small>dias</small></div>
+              <div><strong>08</strong><small>horas</small></div>
+              <div><strong>41</strong><small>min</small></div>
+            </div>
+          </div>
+        </a>
+
+        <a class="widget-card widget-card-quote" href="editor.html?widget=quote">
+          <div class="widget-card-top">
+            <span class="card-tag">Mood Widget</span>
+            <span class="card-arrow">Abrir editor</span>
+          </div>
+          <div class="widget-card-body">
+            <div class="widget-card-copy">
+              <h2>Daily Quote</h2>
+              <p>
+                Bloco editorial para mantra do time, lembrete operacional ou frase do
+                dia.
+              </p>
+            </div>
+            <div class="widget-card-preview preview-quote">
+              <blockquote>
+                “Make it quieter until the work speaks.”
+              </blockquote>
+              <small>studio note</small>
+            </div>
+          </div>
+        </a>
+      </section>
+    </main>
+  </body>
+</html>
