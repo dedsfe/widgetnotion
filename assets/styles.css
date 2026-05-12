@@ -1280,10 +1280,6 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .pomodoro-layout--split .pomodoro-actions {
-  justify-content: flex-start;
-}
-
-.widget-align--center .pomodoro-layout--split .pomodoro-actions {
   justify-content: center;
 }
 
