@@ -1109,6 +1109,7 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: center;
 }
 
 .pomodoro-tab,
