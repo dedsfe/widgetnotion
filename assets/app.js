@@ -30,6 +30,36 @@
     { value: "800", label: "Heavy" },
   ];
 
+  const PREVIEW_MESSAGE_TYPE = "widget-preview:update";
+  const PREVIEW_SYNC_DELAY = 60;
+
+  const FONT_STYLESHEETS = {
+    grotesk:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap",
+    mono:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap",
+    serif:
+      "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
+    sora:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700&display=swap",
+    manrope:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap",
+    outfit:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap",
+    syne:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700&display=swap",
+    intertight:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter+Tight:wght@400;500;600;700&display=swap",
+    archivo:
+      "https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
+    bebas:
+      "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
+    playfair:
+      "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap",
+    cormorant:
+      "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
+  };
+
   const COMMON_FIELDS = [
     {
       key: "canvas",
@@ -529,6 +559,8 @@
     const params = new URLSearchParams(window.location.search);
     const widgetKey = getWidgetKey(params.get("widget"));
     let state = buildState(widgetKey, params);
+    let previewReady = false;
+    let previewTimer = null;
 
     const form = document.getElementById("widget-form");
     const previewFrame = document.getElementById("preview-frame");
@@ -545,29 +577,42 @@
 
     form.innerHTML = renderForm(widgetKey, state);
 
+    const pushPreviewState = () => {
+      if (!previewReady || !previewFrame.contentWindow) {
+        return;
+      }
+      previewFrame.contentWindow.postMessage(
+        {
+          type: PREVIEW_MESSAGE_TYPE,
+          widgetKey,
+          state,
+        },
+        window.location.origin
+      );
+    };
+
+    const schedulePreviewUpdate = () => {
+      window.clearTimeout(previewTimer);
+      previewTimer = window.setTimeout(pushPreviewState, PREVIEW_SYNC_DELAY);
+    };
+
+    previewFrame.addEventListener("load", () => {
+      previewReady = true;
+      pushPreviewState();
+    });
+
     const sync = () => {
       state = readFormState(widgetKey, form);
       updateRangeHints(form, widgetKey, state);
 
-      const nextParams = new URLSearchParams();
-      nextParams.set("widget", widgetKey);
-      getAllFields(widgetKey).forEach((field) => {
-        const value = state[field.key];
-        if (
-          value !== undefined &&
-          value !== null &&
-          (value !== "" || allowsEmptyParam(field))
-        ) {
-          nextParams.set(field.key, String(value));
-        }
-      });
+      const nextParams = serializeWidgetState(widgetKey, state);
 
       const embedUrl = new URL("embed.html", window.location.href);
       embedUrl.search = nextParams.toString();
 
-      previewFrame.src = `embed.html?${nextParams.toString()}`;
       embedUrlInput.value = embedUrl.toString();
       openEmbedLink.href = embedUrl.toString();
+      schedulePreviewUpdate();
 
       const editorUrl = new URL("editor.html", window.location.href);
       editorUrl.search = nextParams.toString();
@@ -591,59 +636,71 @@
     });
 
     updateRangeHints(form, widgetKey, state);
+    previewFrame.src = `embed.html?${serializeWidgetState(widgetKey, state).toString()}`;
     sync();
   }
 
   function initEmbed() {
     const params = new URLSearchParams(window.location.search);
-    const widgetKey = getWidgetKey(params.get("widget"));
-    const state = buildState(widgetKey, params);
+    let widgetKey = getWidgetKey(params.get("widget"));
+    let state = buildState(widgetKey, params);
     const root = document.getElementById("embed-root");
-    const canvasColor = NOTION_CANVAS[state.canvas] || NOTION_CANVAS["notion-light"];
+    let cleanup = null;
 
-    root.innerHTML = renderWidget(widgetKey, state);
-    root.style.setProperty("--embed-width", `${getWidgetWidth(widgetKey, state)}px`);
-    document.body.style.setProperty("--embed-bg", canvasColor);
-    document.documentElement.style.backgroundColor = canvasColor;
-    document.documentElement.style.minHeight = "0";
-    document.documentElement.style.height = "auto";
-    document.body.style.minHeight = "0";
-    document.body.style.height = "auto";
+    const mount = (nextWidgetKey, nextState) => {
+      if (typeof cleanup === "function") {
+        cleanup();
+        cleanup = null;
+      }
 
-    const shell = root.querySelector(".widget-shell");
-    shell.style.setProperty("--widget-bg", state.bg);
-    shell.style.setProperty("--widget-text", state.text);
-    shell.style.setProperty("--widget-accent", state.accent);
-    shell.style.setProperty("--widget-radius", `${state.radius}px`);
-    shell.style.setProperty("--widget-pad", `${state.padding}px`);
-    shell.style.setProperty("--widget-title-scale", String(state.titleScale));
-    shell.style.setProperty("--widget-scale", String(state.scale));
-    shell.style.setProperty("--widget-title-weight", state.titleWeight);
-    shell.style.setProperty("--widget-title-style", state.titleItalic ? "italic" : "normal");
-    shell.style.setProperty("--widget-body-weight", state.bodyWeight);
-    shell.style.setProperty("--widget-body-style", state.bodyItalic ? "italic" : "normal");
-    shell.style.setProperty("--widget-meta-weight", state.metaWeight);
-    shell.style.setProperty("--widget-meta-style", state.metaItalic ? "italic" : "normal");
-    shell.style.setProperty("--widget-timer-weight", state.timerWeight || state.titleWeight);
-    shell.style.setProperty("--widget-timer-style", state.timerItalic ? "italic" : "normal");
-    shell.style.setProperty("--widget-button-weight", state.buttonWeight || state.bodyWeight);
-    shell.style.setProperty("--widget-button-style", state.buttonItalic ? "italic" : "normal");
+      widgetKey = nextWidgetKey;
+      state = normalizeState(widgetKey, nextState);
+      ensureFontStylesheet(document, state.font);
 
-    if (widgetKey === "pomodoro") {
-      hydratePomodoro(root, state);
-    }
-    if (widgetKey === "countdown") {
-      hydrateCountdown(root, state);
-    }
+      const canvasColor = NOTION_CANVAS[state.canvas] || NOTION_CANVAS["notion-light"];
+      root.innerHTML = renderWidget(widgetKey, state);
+      root.style.setProperty("--embed-width", `${getWidgetWidth(widgetKey, state)}px`);
+      document.body.style.setProperty("--embed-bg", canvasColor);
+      document.documentElement.style.backgroundColor = canvasColor;
+      document.documentElement.style.minHeight = "0";
+      document.documentElement.style.height = "auto";
+      document.body.style.minHeight = "0";
+      document.body.style.height = "auto";
+
+      const shell = root.querySelector(".widget-shell");
+      applyWidgetShellStyles(shell, state);
+
+      if (widgetKey === "pomodoro") {
+        cleanup = hydratePomodoro(root, state);
+      } else if (widgetKey === "countdown") {
+        cleanup = hydrateCountdown(root, state);
+      }
+    };
+
+    window.addEventListener("message", (event) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+      const payload = event.data;
+      if (!payload || payload.type !== PREVIEW_MESSAGE_TYPE) {
+        return;
+      }
+      mount(getWidgetKey(payload.widgetKey), payload.state || {});
+    });
+
+    mount(widgetKey, state);
   }
 
   function getWidgetKey(candidate) {
     return Object.prototype.hasOwnProperty.call(WIDGETS, candidate) ? candidate : "pomodoro";
   }
 
+  function normalizeState(widgetKey, rawState) {
+    return { ...WIDGETS[widgetKey].defaults, ...(rawState || {}) };
+  }
+
   function buildState(widgetKey, params) {
-    const widget = WIDGETS[widgetKey];
-    const state = { ...widget.defaults };
+    const state = normalizeState(widgetKey);
 
     getAllFields(widgetKey).forEach((field) => {
       const raw = params.get(field.key);
@@ -665,6 +722,56 @@
     });
 
     return state;
+  }
+
+  function serializeWidgetState(widgetKey, state) {
+    const nextParams = new URLSearchParams();
+    nextParams.set("widget", widgetKey);
+    getAllFields(widgetKey).forEach((field) => {
+      const value = state[field.key];
+      if (
+        value !== undefined &&
+        value !== null &&
+        (value !== "" || allowsEmptyParam(field))
+      ) {
+        nextParams.set(field.key, String(value));
+      }
+    });
+    return nextParams;
+  }
+
+  function ensureFontStylesheet(targetDocument, fontKey) {
+    const href = FONT_STYLESHEETS[fontKey] || FONT_STYLESHEETS.grotesk;
+    let link = targetDocument.getElementById("widget-font-stylesheet");
+    if (!link) {
+      link = targetDocument.createElement("link");
+      link.id = "widget-font-stylesheet";
+      link.rel = "stylesheet";
+      targetDocument.head.appendChild(link);
+    }
+    if (link.href !== href) {
+      link.href = href;
+    }
+  }
+
+  function applyWidgetShellStyles(shell, state) {
+    shell.style.setProperty("--widget-bg", state.bg);
+    shell.style.setProperty("--widget-text", state.text);
+    shell.style.setProperty("--widget-accent", state.accent);
+    shell.style.setProperty("--widget-radius", `${state.radius}px`);
+    shell.style.setProperty("--widget-pad", `${state.padding}px`);
+    shell.style.setProperty("--widget-title-scale", String(state.titleScale));
+    shell.style.setProperty("--widget-scale", String(state.scale));
+    shell.style.setProperty("--widget-title-weight", state.titleWeight);
+    shell.style.setProperty("--widget-title-style", state.titleItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-body-weight", state.bodyWeight);
+    shell.style.setProperty("--widget-body-style", state.bodyItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-meta-weight", state.metaWeight);
+    shell.style.setProperty("--widget-meta-style", state.metaItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-timer-weight", state.timerWeight || state.titleWeight);
+    shell.style.setProperty("--widget-timer-style", state.timerItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-button-weight", state.buttonWeight || state.bodyWeight);
+    shell.style.setProperty("--widget-button-style", state.buttonItalic ? "italic" : "normal");
   }
 
   function getAllFields(widgetKey) {
@@ -1172,6 +1279,9 @@
     });
 
     render();
+    return () => {
+      clearTicker();
+    };
   }
 
   function hydrateCountdown(root, state) {
@@ -1198,7 +1308,10 @@
     };
 
     render();
-    window.setInterval(render, 1000);
+    const intervalId = window.setInterval(render, 1000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
   }
 
   function getPomodoroMode(mode) {
