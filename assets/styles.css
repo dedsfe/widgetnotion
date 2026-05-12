@@ -466,8 +466,6 @@ code {
 }
 
 .control-panel {
-  position: sticky;
-  top: 18px;
   padding: 18px;
 }
 
@@ -694,10 +692,16 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .preview-panel {
+  position: sticky;
+  top: 18px;
+  align-self: start;
   display: grid;
   gap: 18px;
   padding: 18px;
   min-height: 760px;
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .preview-toolbar {
@@ -1427,12 +1431,15 @@ input[type="range"]::-moz-range-thumb {
     flex-direction: column;
   }
 
-  .control-panel {
+  .control-panel,
+  .preview-panel {
     position: static;
   }
 
   .preview-panel {
     min-height: auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .preview-frame-shell,
