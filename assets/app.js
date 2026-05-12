@@ -1,5 +1,35 @@
 (function () {
+  const NOTION_CANVAS = {
+    "notion-light": "#ffffff",
+    "notion-dark": "#191919",
+  };
+
+  const POMODORO_MODE_META = {
+    focus: {
+      label: "Focus",
+      hint: "bloco atual",
+    },
+    break: {
+      label: "Break",
+      hint: "intervalo atual",
+    },
+    paused: {
+      label: "Paused",
+      hint: "aguardando retomada",
+    },
+  };
+
   const COMMON_FIELDS = [
+    {
+      key: "canvas",
+      label: "Fundo no Notion",
+      type: "select",
+      section: "No Notion",
+      options: [
+        { value: "notion-light", label: "Notion Light" },
+        { value: "notion-dark", label: "Notion Dark" },
+      ],
+    },
     {
       key: "style",
       label: "Style",
@@ -21,7 +51,7 @@
         { value: "mono", label: "Mono" },
       ],
     },
-    { key: "bg", label: "Fundo", type: "color", section: "Aparência" },
+    { key: "bg", label: "Fundo do widget", type: "color", section: "Aparência" },
     { key: "text", label: "Texto", type: "color", section: "Aparência" },
     { key: "accent", label: "Accent", type: "color", section: "Aparência" },
     {
@@ -48,10 +78,11 @@
 
   const WIDGETS = {
     pomodoro: {
-      name: "Pomodoro",
-      kicker: "Focus Widget",
-      description: "Ciclos de foco e pausa para dashboards operacionais.",
+      name: "Pomodoro Status",
+      kicker: "Status Widget",
+      description: "Status visual de uma sessao de foco. O embed so exibe o estado atual.",
       defaults: {
+        canvas: "notion-light",
         style: "soft",
         font: "grotesk",
         bg: "#121716",
@@ -59,16 +90,19 @@
         accent: "#c8ff62",
         radius: 28,
         scale: 1,
-        title: "Focus Sprint",
+        title: "Deep Work",
         duration: 25,
         breakLength: 5,
-        note: "break em 5 min",
+        mode: "focus",
+        remaining: "24:59",
+        progress: 72,
+        note: "Proxima pausa em 5 min",
       },
       fields: [
         { key: "title", label: "Título", type: "text", section: "Conteúdo" },
         {
           key: "duration",
-          label: "Foco (min)",
+          label: "Bloco de foco (min)",
           type: "number",
           section: "Conteúdo",
           min: 10,
@@ -85,6 +119,33 @@
           step: 1,
         },
         {
+          key: "mode",
+          label: "Modo exibido",
+          type: "select",
+          section: "Conteúdo",
+          options: [
+            { value: "focus", label: "Focus" },
+            { value: "break", label: "Break" },
+            { value: "paused", label: "Paused" },
+          ],
+        },
+        {
+          key: "remaining",
+          label: "Tempo exibido",
+          type: "text",
+          section: "Conteúdo",
+        },
+        {
+          key: "progress",
+          label: "Progresso",
+          type: "range",
+          section: "Conteúdo",
+          min: 0,
+          max: 100,
+          step: 1,
+          suffix: "%",
+        },
+        {
           key: "note",
           label: "Linha auxiliar",
           type: "text",
@@ -94,9 +155,10 @@
     },
     countdown: {
       name: "Countdown",
-      kicker: "Launch Widget",
-      description: "Contagem regressiva embutível para metas e lançamentos.",
+      kicker: "Deadline Widget",
+      description: "Contagem regressiva passiva para prazos, lancamentos e marcos.",
       defaults: {
+        canvas: "notion-light",
         style: "glass",
         font: "grotesk",
         bg: "#10161c",
@@ -118,17 +180,18 @@
         },
         {
           key: "note",
-          label: "Linha auxiliar",
+          label: "Contexto",
           type: "text",
           section: "Conteúdo",
         },
       ],
     },
     quote: {
-      name: "Daily Quote",
-      kicker: "Mood Widget",
-      description: "Bloco editorial para mantra do time ou nota operacional.",
+      name: "Daily Note",
+      kicker: "Editorial Widget",
+      description: "Bloco editorial estatico para mantra, instrução curta ou frase do dia.",
       defaults: {
+        canvas: "notion-light",
         style: "brutal",
         font: "grotesk",
         bg: "#15100d",
@@ -150,7 +213,7 @@
         },
         {
           key: "author",
-          label: "Autor / label",
+          label: "Assinatura",
           type: "text",
           section: "Conteúdo",
         },
@@ -233,8 +296,15 @@
     const widgetKey = getWidgetKey(params.get("widget"));
     const state = buildState(widgetKey, params);
     const root = document.getElementById("embed-root");
+    const canvasColor = NOTION_CANVAS[state.canvas] || NOTION_CANVAS["notion-light"];
 
     root.innerHTML = renderWidget(widgetKey, state);
+    document.body.style.setProperty("--embed-bg", canvasColor);
+    document.documentElement.style.backgroundColor = canvasColor;
+    document.documentElement.style.minHeight = "0";
+    document.documentElement.style.height = "auto";
+    document.body.style.minHeight = "0";
+    document.body.style.height = "auto";
 
     const shell = root.querySelector(".widget-shell");
     shell.style.setProperty("--widget-bg", state.bg);
@@ -243,9 +313,6 @@
     shell.style.setProperty("--widget-radius", `${state.radius}px`);
     shell.style.setProperty("--widget-scale", String(state.scale));
 
-    if (widgetKey === "pomodoro") {
-      hydratePomodoro(root, state);
-    }
     if (widgetKey === "countdown") {
       hydrateCountdown(root, state);
     }
@@ -310,8 +377,14 @@
   }
 
   function sectionCopy(sectionName, widgetKey) {
+    if (sectionName === "No Notion") {
+      return "Cor do iframe para sumir no fundo claro ou escuro do Notion.";
+    }
     if (sectionName === "Aparência") {
       return "Ajustes de visual compartilhados no link.";
+    }
+    if (sectionName === "Conteúdo") {
+      return "No Notion o widget é só leitura. Ajuste aqui tudo o que aparece no embed.";
     }
     return WIDGETS[widgetKey].description;
   }
@@ -423,24 +496,27 @@
   function renderWidget(widgetKey, state) {
     const shellClass = `widget-shell widget-style--${state.style} font-${state.font}`;
     if (widgetKey === "pomodoro") {
+      const modeMeta = getPomodoroModeMeta(state.mode);
+      const remaining = normalizeTimerValue(state.remaining);
+      const progress = normalizeProgress(state.progress);
       return `
         <section class="${shellClass}">
           <div class="widget-frame">
             <header class="widget-head">
               <div class="widget-meta">
-                <span class="widget-kicker">focus loop</span>
+                <span class="widget-kicker">focus status</span>
                 <h1 class="widget-title">${escapeHtml(state.title)}</h1>
               </div>
               <span class="widget-chip">${state.duration}/${state.breakLength}</span>
             </header>
             <div class="pomodoro-layout">
-              <div class="ring" data-progress-ring>
-                <div class="ring-time" data-pomodoro-time></div>
+              <div class="ring" style="--progress: ${progress}">
+                <div class="ring-time">${escapeHtml(remaining)}</div>
               </div>
               <div class="pomodoro-details">
                 <div class="metric-line">
-                  <span class="metric-strong" data-pomodoro-mode>Focus</span>
-                  <span class="metric-soft">loop ativo</span>
+                  <span class="metric-strong">${modeMeta.label}</span>
+                  <span class="metric-soft">${modeMeta.hint}</span>
                 </div>
                 <div class="widget-divider"></div>
                 <p class="widget-footnote">${escapeHtml(state.note)}</p>
@@ -457,7 +533,7 @@
           <div class="widget-frame">
             <header class="widget-head">
               <div class="widget-meta">
-                <span class="widget-kicker">countdown</span>
+                <span class="widget-kicker">deadline countdown</span>
                 <h1 class="widget-title">${escapeHtml(state.title)}</h1>
               </div>
               <span class="widget-chip">${escapeHtml(state.note)}</span>
@@ -484,10 +560,10 @@
         <div class="widget-frame">
           <header class="widget-head">
             <div class="widget-meta">
-              <span class="widget-kicker">daily note</span>
+              <span class="widget-kicker">editorial note</span>
               <h1 class="widget-title">${escapeHtml(state.title)}</h1>
             </div>
-            <span class="widget-chip">quote</span>
+            <span class="widget-chip">read only</span>
           </header>
           <div class="quote-details">
             <blockquote class="quote-block">
@@ -498,34 +574,6 @@
         </div>
       </section>
     `;
-  }
-
-  function hydratePomodoro(root, state) {
-    const timeNode = root.querySelector("[data-pomodoro-time]");
-    const modeNode = root.querySelector("[data-pomodoro-mode]");
-    const ring = root.querySelector("[data-progress-ring]");
-    const focusSeconds = Number(state.duration) * 60;
-    const breakSeconds = Number(state.breakLength) * 60;
-    const cycleSeconds = focusSeconds + breakSeconds;
-
-    const render = () => {
-      const now = Math.floor(Date.now() / 1000);
-      const elapsed = now % cycleSeconds;
-      const isFocus = elapsed < focusSeconds;
-      const segmentSeconds = isFocus ? focusSeconds : breakSeconds;
-      const secondsInSegment = isFocus ? elapsed : elapsed - focusSeconds;
-      const remaining = Math.max(segmentSeconds - secondsInSegment, 0);
-      const minutes = String(Math.floor(remaining / 60)).padStart(2, "0");
-      const seconds = String(remaining % 60).padStart(2, "0");
-      const progress = ((secondsInSegment / segmentSeconds) * 100).toFixed(1);
-
-      timeNode.textContent = `${minutes}:${seconds}`;
-      modeNode.textContent = isFocus ? "Focus" : "Break";
-      ring.style.setProperty("--progress", progress);
-    };
-
-    render();
-    window.setInterval(render, 1000);
   }
 
   function hydrateCountdown(root, state) {
@@ -553,6 +601,23 @@
 
     render();
     window.setInterval(render, 1000);
+  }
+
+  function getPomodoroModeMeta(mode) {
+    return POMODORO_MODE_META[mode] || POMODORO_MODE_META.focus;
+  }
+
+  function normalizeTimerValue(value) {
+    const candidate = String(value ?? "").trim();
+    return /^\d{1,3}:\d{2}$/.test(candidate) ? candidate : "25:00";
+  }
+
+  function normalizeProgress(value) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return 0;
+    }
+    return Math.min(100, Math.max(0, numeric));
   }
 
   function escapeHtml(value) {

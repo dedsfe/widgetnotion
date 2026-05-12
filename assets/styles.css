@@ -50,6 +50,16 @@ body::before {
   pointer-events: none;
 }
 
+body.page-embed {
+  --embed-bg: #ffffff;
+  min-height: 0;
+  background: var(--embed-bg);
+}
+
+body.page-embed::before {
+  content: none;
+}
+
 .page {
   position: relative;
   overflow-x: clip;
@@ -633,15 +643,15 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .embed-canvas {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 14px;
-  background: transparent;
+  min-height: 0;
+  display: block;
+  padding: 0;
+  background: var(--embed-bg);
 }
 
 #embed-root {
   width: min(100%, 540px);
+  margin: 0 auto;
 }
 
 .widget-shell {
