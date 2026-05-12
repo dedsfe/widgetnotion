@@ -6,21 +6,29 @@
 
   const POMODORO_RUNTIME_MODES = {
     focus: {
-      label: "Pomodoro",
-      hint: "sessao de foco",
       inputKey: "focusLength",
+      labelKey: "focusLabel",
+      hintKey: "focusHint",
     },
     short: {
-      label: "Short Break",
-      hint: "pausa curta",
       inputKey: "shortBreakLength",
+      labelKey: "shortLabel",
+      hintKey: "shortHint",
     },
     long: {
-      label: "Long Break",
-      hint: "pausa longa",
       inputKey: "longBreakLength",
+      labelKey: "longLabel",
+      hintKey: "longHint",
     },
   };
+
+  const FONT_WEIGHT_OPTIONS = [
+    { value: "400", label: "Regular" },
+    { value: "500", label: "Medium" },
+    { value: "600", label: "Semibold" },
+    { value: "700", label: "Bold" },
+    { value: "800", label: "Heavy" },
+  ];
 
   const COMMON_FIELDS = [
     {
@@ -97,6 +105,45 @@
         { value: "left", label: "Left" },
         { value: "center", label: "Center" },
       ],
+    },
+    {
+      key: "titleWeight",
+      label: "Peso do título",
+      type: "select",
+      section: "Tipografia",
+      options: FONT_WEIGHT_OPTIONS,
+    },
+    {
+      key: "titleItalic",
+      label: "Título em itálico",
+      type: "checkbox",
+      section: "Tipografia",
+    },
+    {
+      key: "bodyWeight",
+      label: "Peso do texto",
+      type: "select",
+      section: "Tipografia",
+      options: FONT_WEIGHT_OPTIONS,
+    },
+    {
+      key: "bodyItalic",
+      label: "Texto em itálico",
+      type: "checkbox",
+      section: "Tipografia",
+    },
+    {
+      key: "metaWeight",
+      label: "Peso dos labels",
+      type: "select",
+      section: "Tipografia",
+      options: FONT_WEIGHT_OPTIONS,
+    },
+    {
+      key: "metaItalic",
+      label: "Labels em itálico",
+      type: "checkbox",
+      section: "Tipografia",
     },
     {
       key: "blur",
@@ -185,6 +232,12 @@
         texture: "none",
         font: "grotesk",
         align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
         blur: true,
         border: "line",
         shadow: "soft",
@@ -196,6 +249,26 @@
         titleScale: 1,
         scale: 1,
         title: "Pomofocus",
+        kickerText: "",
+        badgeText: "",
+        focusLabel: "Pomodoro",
+        shortLabel: "Short Break",
+        longLabel: "Long Break",
+        focusHint: "sessao de foco",
+        shortHint: "pausa curta",
+        longHint: "pausa longa",
+        readySuffix: "pronto para começar.",
+        runningSuffix: "em andamento.",
+        pausedSuffix: "pausado.",
+        completedSuffix: "concluído.",
+        startLabel: "Start",
+        pauseLabel: "Pause",
+        resumeLabel: "Resume",
+        resetLabel: "Reset",
+        timerWeight: "700",
+        timerItalic: false,
+        buttonWeight: "700",
+        buttonItalic: false,
         focusLength: 25,
         shortBreakLength: 5,
         longBreakLength: 15,
@@ -246,6 +319,22 @@
             { value: "long", label: "Long Break" },
           ],
         },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
+        { key: "focusLabel", label: "Label Pomodoro", type: "text", section: "Texto" },
+        { key: "shortLabel", label: "Label Short Break", type: "text", section: "Texto" },
+        { key: "longLabel", label: "Label Long Break", type: "text", section: "Texto" },
+        { key: "focusHint", label: "Texto base Pomodoro", type: "text", section: "Texto" },
+        { key: "shortHint", label: "Texto base Short Break", type: "text", section: "Texto" },
+        { key: "longHint", label: "Texto base Long Break", type: "text", section: "Texto" },
+        { key: "readySuffix", label: "Sufixo pronto", type: "text", section: "Texto" },
+        { key: "runningSuffix", label: "Sufixo rodando", type: "text", section: "Texto" },
+        { key: "pausedSuffix", label: "Sufixo pausado", type: "text", section: "Texto" },
+        { key: "completedSuffix", label: "Sufixo concluído", type: "text", section: "Texto" },
+        { key: "startLabel", label: "Texto Start", type: "text", section: "Texto" },
+        { key: "pauseLabel", label: "Texto Pause", type: "text", section: "Texto" },
+        { key: "resumeLabel", label: "Texto Resume", type: "text", section: "Texto" },
+        { key: "resetLabel", label: "Texto Reset", type: "text", section: "Texto" },
         {
           key: "layout",
           label: "Layout do card",
@@ -278,6 +367,32 @@
           ],
         },
         {
+          key: "timerWeight",
+          label: "Peso do timer",
+          type: "select",
+          section: "Pomodoro",
+          options: FONT_WEIGHT_OPTIONS,
+        },
+        {
+          key: "timerItalic",
+          label: "Timer em itálico",
+          type: "checkbox",
+          section: "Pomodoro",
+        },
+        {
+          key: "buttonWeight",
+          label: "Peso dos botões",
+          type: "select",
+          section: "Pomodoro",
+          options: FONT_WEIGHT_OPTIONS,
+        },
+        {
+          key: "buttonItalic",
+          label: "Botões em itálico",
+          type: "checkbox",
+          section: "Pomodoro",
+        },
+        {
           key: "showInputs",
           label: "Mostrar ajustes de tempo",
           type: "checkbox",
@@ -303,6 +418,12 @@
         texture: "grid",
         font: "grotesk",
         align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
         blur: true,
         border: "line",
         shadow: "soft",
@@ -314,11 +435,21 @@
         titleScale: 1,
         scale: 1,
         title: "Launch Window",
+        kickerText: "",
+        daysLabel: "Dias",
+        hoursLabel: "Horas",
+        minutesLabel: "Min",
+        secondsLabel: "Seg",
         target: "2026-12-31T18:00",
         note: "rollout interno",
       },
       fields: [
         { key: "title", label: "Título", type: "text", section: "Conteúdo" },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "daysLabel", label: "Label dias", type: "text", section: "Texto" },
+        { key: "hoursLabel", label: "Label horas", type: "text", section: "Texto" },
+        { key: "minutesLabel", label: "Label minutos", type: "text", section: "Texto" },
+        { key: "secondsLabel", label: "Label segundos", type: "text", section: "Texto" },
         {
           key: "target",
           label: "Data alvo",
@@ -345,6 +476,12 @@
         texture: "none",
         font: "grotesk",
         align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
         blur: true,
         border: "accent",
         shadow: "soft",
@@ -356,11 +493,15 @@
         titleScale: 1,
         scale: 1,
         title: "Daily Quote",
+        kickerText: "",
+        badgeText: "",
         quote: "Make it quieter until the work speaks.",
         author: "studio note",
       },
       fields: [
         { key: "title", label: "Título", type: "text", section: "Conteúdo" },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
         {
           key: "quote",
           label: "Texto",
@@ -412,7 +553,11 @@
       nextParams.set("widget", widgetKey);
       getAllFields(widgetKey).forEach((field) => {
         const value = state[field.key];
-        if (value !== undefined && value !== null && value !== "") {
+        if (
+          value !== undefined &&
+          value !== null &&
+          (value !== "" || allowsEmptyParam(field))
+        ) {
           nextParams.set(field.key, String(value));
         }
       });
@@ -473,6 +618,16 @@
     shell.style.setProperty("--widget-pad", `${state.padding}px`);
     shell.style.setProperty("--widget-title-scale", String(state.titleScale));
     shell.style.setProperty("--widget-scale", String(state.scale));
+    shell.style.setProperty("--widget-title-weight", state.titleWeight);
+    shell.style.setProperty("--widget-title-style", state.titleItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-body-weight", state.bodyWeight);
+    shell.style.setProperty("--widget-body-style", state.bodyItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-meta-weight", state.metaWeight);
+    shell.style.setProperty("--widget-meta-style", state.metaItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-timer-weight", state.timerWeight || state.titleWeight);
+    shell.style.setProperty("--widget-timer-style", state.timerItalic ? "italic" : "normal");
+    shell.style.setProperty("--widget-button-weight", state.buttonWeight || state.bodyWeight);
+    shell.style.setProperty("--widget-button-style", state.buttonItalic ? "italic" : "normal");
 
     if (widgetKey === "pomodoro") {
       hydratePomodoro(root, state);
@@ -554,11 +709,17 @@
     if (sectionName === "Aparência") {
       return "Controles finos para levar o card de limpo até dramático.";
     }
+    if (sectionName === "Tipografia") {
+      return "Peso e itálico para deixar os textos menos engessados.";
+    }
     if (sectionName === "Conteúdo") {
       if (WIDGETS[widgetKey].interactive) {
         return "Esse widget continua funcional no Notion. Defina aqui os tempos iniciais e o visual do card.";
       }
       return "No Notion o widget é só leitura. Ajuste aqui tudo o que aparece no embed.";
+    }
+    if (sectionName === "Texto") {
+      return "Tudo o que aparece escrito no card pode ser editado aqui.";
     }
     if (sectionName === "Pomodoro") {
       return "Controles próprios do timer interativo.";
@@ -567,7 +728,7 @@
   }
 
   function isCompactField(field) {
-    return ["checkbox", "color", "number", "range", "select", "datetime-local"].includes(field.type);
+    return ["checkbox", "color", "number", "range", "select", "datetime-local", "text"].includes(field.type);
   }
 
   function renderField(field, value) {
@@ -662,6 +823,10 @@
         return;
       }
       if (value === "") {
+        if (allowsEmptyParam(field)) {
+          state[field.key] = "";
+          return;
+        }
         state[field.key] = defaults[field.key];
         return;
       }
@@ -672,6 +837,10 @@
       state[field.key] = value;
     });
     return state;
+  }
+
+  function allowsEmptyParam(field) {
+    return field.type === "text" || field.type === "textarea";
   }
 
   function updateRangeHints(form, widgetKey, state) {
@@ -705,6 +874,7 @@
       const focusLength = sanitizePomodoroMinutes("focus", state.focusLength, 25);
       const shortBreakLength = sanitizePomodoroMinutes("short", state.shortBreakLength, 5);
       const longBreakLength = sanitizePomodoroMinutes("long", state.longBreakLength, 15);
+      const pomodoroCopy = getPomodoroCopy(state);
       const frameClass = [
         "widget-frame",
         "widget-frame--pomodoro",
@@ -726,38 +896,51 @@
           >
             <header class="widget-head">
               <div class="widget-meta">
-                <span class="widget-kicker">interactive pomodoro</span>
+                ${renderOptionalText("span", "widget-kicker", state.kickerText)}
                 <h1 class="widget-title">${escapeHtml(state.title)}</h1>
               </div>
-              <span class="widget-chip">interactive</span>
+              ${renderOptionalText("span", "widget-chip", state.badgeText)}
             </header>
             <div class="pomodoro-main">
               <div class="pomodoro-primary">
                 <div class="pomodoro-tabs" role="tablist" aria-label="Pomodoro modes">
-                  ${renderPomodoroTab("focus", "Pomodoro", initialMode === "focus")}
-                  ${renderPomodoroTab("short", "Short Break", initialMode === "short")}
-                  ${renderPomodoroTab("long", "Long Break", initialMode === "long")}
+                  ${renderPomodoroTab("focus", pomodoroCopy.modes.focus.label, initialMode === "focus")}
+                  ${renderPomodoroTab("short", pomodoroCopy.modes.short.label, initialMode === "short")}
+                  ${renderPomodoroTab("long", pomodoroCopy.modes.long.label, initialMode === "long")}
                 </div>
                 <div class="pomodoro-display-shell">
                   <div class="pomodoro-ring" data-pomodoro-ring>
                     <div class="pomodoro-timer" data-pomodoro-display>25:00</div>
                   </div>
                 </div>
-                <p class="pomodoro-status" data-pomodoro-status>Pronto para começar.</p>
+                <p class="pomodoro-status" data-pomodoro-status>${escapeHtml(getPomodoroStatusText({
+                  activeMode: initialMode,
+                  durations: {
+                    focus: focusLength,
+                    short: shortBreakLength,
+                    long: longBreakLength,
+                  },
+                  remainingSeconds: {
+                    focus: focusLength,
+                    short: shortBreakLength,
+                    long: longBreakLength,
+                  }[initialMode] * 60,
+                  isRunning: false,
+                }, pomodoroCopy))}</p>
               </div>
               <div class="pomodoro-secondary">
                 <div class="pomodoro-actions">
                   <button class="pomodoro-button pomodoro-button-primary" type="button" data-pomodoro-toggle>
-                    Start
+                    ${escapeHtml(pomodoroCopy.controls.start)}
                   </button>
                   <button class="pomodoro-button" type="button" data-pomodoro-reset>
-                    Reset
+                    ${escapeHtml(pomodoroCopy.controls.reset)}
                   </button>
                 </div>
                 <div class="widget-divider pomodoro-divider"></div>
                 <div class="pomodoro-config">
                   <label class="pomodoro-setting">
-                    <span>Pomodoro</span>
+                    <span>${escapeHtml(pomodoroCopy.modes.focus.label)}</span>
                     <input
                       type="number"
                       min="1"
@@ -768,7 +951,7 @@
                     />
                   </label>
                   <label class="pomodoro-setting">
-                    <span>Short Break</span>
+                    <span>${escapeHtml(pomodoroCopy.modes.short.label)}</span>
                     <input
                       type="number"
                       min="1"
@@ -779,7 +962,7 @@
                     />
                   </label>
                   <label class="pomodoro-setting">
-                    <span>Long Break</span>
+                    <span>${escapeHtml(pomodoroCopy.modes.long.label)}</span>
                     <input
                       type="number"
                       min="1"
@@ -803,18 +986,23 @@
           <div class="widget-frame">
             <header class="widget-head">
               <div class="widget-meta">
-                <span class="widget-kicker">deadline countdown</span>
+                ${renderOptionalText("span", "widget-kicker", state.kickerText)}
                 <h1 class="widget-title">${escapeHtml(state.title)}</h1>
               </div>
-              <span class="widget-chip">${escapeHtml(state.note)}</span>
+              ${renderOptionalText("span", "widget-chip", state.note)}
             </header>
             <div class="countdown-grid">
-              ${["Dias", "Horas", "Min", "Seg"]
+              ${[
+                { key: "dias", label: state.daysLabel || "Dias" },
+                { key: "horas", label: state.hoursLabel || "Horas" },
+                { key: "min", label: state.minutesLabel || "Min" },
+                { key: "seg", label: state.secondsLabel || "Seg" },
+              ]
                 .map(
-                  (label) => `
+                  (item) => `
                     <div class="countdown-cell">
-                      <strong class="countdown-value" data-countdown-value="${label.toLowerCase()}">00</strong>
-                      <span class="countdown-label">${label}</span>
+                      <strong class="countdown-value" data-countdown-value="${item.key}">00</strong>
+                      <span class="countdown-label">${escapeHtml(item.label)}</span>
                     </div>
                   `
                 )
@@ -830,10 +1018,10 @@
         <div class="widget-frame">
           <header class="widget-head">
             <div class="widget-meta">
-              <span class="widget-kicker">editorial note</span>
+              ${renderOptionalText("span", "widget-kicker", state.kickerText)}
               <h1 class="widget-title">${escapeHtml(state.title)}</h1>
             </div>
-            <span class="widget-chip">read only</span>
+            ${renderOptionalText("span", "widget-chip", state.badgeText)}
           </header>
           <div class="quote-details">
             <blockquote class="quote-block">
@@ -851,6 +1039,7 @@
     if (!app) {
       return;
     }
+    const pomodoroCopy = getPomodoroCopy(state);
 
     const refs = {
       display: app.querySelector("[data-pomodoro-display]"),
@@ -882,8 +1071,8 @@
 
     const render = () => {
       refs.display.textContent = formatPomodoroTime(runtime.remainingSeconds);
-      refs.status.textContent = getPomodoroStatusText(runtime);
-      refs.toggle.textContent = getPomodoroToggleLabel(runtime);
+      refs.status.textContent = getPomodoroStatusText(runtime, pomodoroCopy);
+      refs.toggle.textContent = getPomodoroToggleLabel(runtime, pomodoroCopy);
       if (refs.ring) {
         refs.ring.style.setProperty("--progress", String(getPomodoroProgress(runtime)));
       }
@@ -1048,28 +1237,63 @@
     return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
   }
 
-  function getPomodoroStatusText(runtime) {
-    const modeMeta = POMODORO_RUNTIME_MODES[runtime.activeMode];
+  function getPomodoroStatusText(runtime, pomodoroCopy) {
+    const modeCopy = pomodoroCopy.modes[runtime.activeMode];
     if (runtime.remainingSeconds <= 0) {
-      return `${modeMeta.label} concluído.`;
+      return composePomodoroStatus(modeCopy.hint, pomodoroCopy.suffixes.completed);
     }
     if (runtime.isRunning) {
-      return `${modeMeta.hint} em andamento.`;
+      return composePomodoroStatus(modeCopy.hint, pomodoroCopy.suffixes.running);
     }
     if (runtime.remainingSeconds < runtime.durations[runtime.activeMode] * 60) {
-      return `${modeMeta.hint} pausado.`;
+      return composePomodoroStatus(modeCopy.hint, pomodoroCopy.suffixes.paused);
     }
-    return `${modeMeta.hint} pronto para começar.`;
+    return composePomodoroStatus(modeCopy.hint, pomodoroCopy.suffixes.ready);
   }
 
-  function getPomodoroToggleLabel(runtime) {
+  function getPomodoroToggleLabel(runtime, pomodoroCopy) {
     if (runtime.isRunning) {
-      return "Pause";
+      return pomodoroCopy.controls.pause;
     }
     if (runtime.remainingSeconds < runtime.durations[runtime.activeMode] * 60) {
-      return "Resume";
+      return pomodoroCopy.controls.resume;
     }
-    return "Start";
+    return pomodoroCopy.controls.start;
+  }
+
+  function getPomodoroCopy(state) {
+    return {
+      modes: {
+        focus: {
+          label: state.focusLabel || "Pomodoro",
+          hint: state.focusHint || "sessao de foco",
+        },
+        short: {
+          label: state.shortLabel || "Short Break",
+          hint: state.shortHint || "pausa curta",
+        },
+        long: {
+          label: state.longLabel || "Long Break",
+          hint: state.longHint || "pausa longa",
+        },
+      },
+      controls: {
+        start: state.startLabel || "Start",
+        pause: state.pauseLabel || "Pause",
+        resume: state.resumeLabel || "Resume",
+        reset: state.resetLabel || "Reset",
+      },
+      suffixes: {
+        ready: state.readySuffix || "pronto para começar.",
+        running: state.runningSuffix || "em andamento.",
+        paused: state.pausedSuffix || "pausado.",
+        completed: state.completedSuffix || "concluído.",
+      },
+    };
+  }
+
+  function composePomodoroStatus(prefix, suffix) {
+    return [prefix, suffix].filter(Boolean).join(" ").trim();
   }
 
   function getEmbedBehaviorCopy(widgetKey) {
@@ -1103,9 +1327,16 @@
         data-pomodoro-tab="${mode}"
         aria-pressed="${isActive ? "true" : "false"}"
       >
-        ${label}
+        ${escapeHtml(label)}
       </button>
     `;
+  }
+
+  function renderOptionalText(tag, className, value) {
+    if (!value) {
+      return "";
+    }
+    return `<${tag} class="${className}">${escapeHtml(value)}</${tag}>`;
   }
 
   function escapeHtml(value) {
