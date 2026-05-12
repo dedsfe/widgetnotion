@@ -841,6 +841,16 @@ input[type="range"]::-moz-range-thumb {
   background: var(--widget-accent);
 }
 
+.page-embed .widget-style--soft,
+.page-embed .widget-style--glass,
+.page-embed .widget-style--brutal {
+  box-shadow: none;
+}
+
+.page-embed .widget-style--glass {
+  backdrop-filter: none;
+}
+
 .widget-frame {
   position: relative;
   display: grid;
