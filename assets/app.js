@@ -37,6 +37,8 @@
   const WEATHER_CACHE_TTL = 10 * 60 * 1000;
   const WEATHER_CACHE = new Map();
   const STORAGE_NAMESPACE = "widgets-notion";
+  const HABIT_SYNC_CHANNEL = `${STORAGE_NAMESPACE}:habit-sync`;
+  const HABIT_SYNC_DEFAULT_ID = "rotina-principal";
   const CALENDAR_WEEKDAYS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
   const WEATHER_CODES = {
     0: { label: "Céu limpo", day: "☀️", night: "🌙" },
@@ -282,6 +284,21 @@
       max: 1.15,
       step: 0.01,
       suffix: "x",
+    },
+  ];
+
+  const HABIT_SYNC_FIELDS = [
+    {
+      key: "syncHabits",
+      label: "Conectar Flow + Tracker",
+      type: "checkbox",
+      section: "Conexão",
+    },
+    {
+      key: "habitSyncId",
+      label: "ID da conexão",
+      type: "text",
+      section: "Conexão",
     },
   ];
 
@@ -668,10 +685,10 @@
       ],
     },
     habits: {
-      name: "Habit Tracker",
+      name: "Habit Flow",
       kicker: "Interactive Widget",
       interactive: true,
-      description: "Checklist interativo de hábitos para marcar no próprio embed.",
+      description: "Checklist editável para criar, organizar e marcar hábitos no próprio embed.",
       defaults: {
         canvas: "notion-light",
         style: "editorial",
@@ -701,6 +718,8 @@
         introText: "Rotina do dia",
         habitsText: "Água\nTreino\nLeitura\nDeep work",
         checkedText: "1,3",
+        syncHabits: false,
+        habitSyncId: HABIT_SYNC_DEFAULT_ID,
       },
       fields: [
         { key: "title", label: "Título", type: "text", section: "Conteúdo" },
@@ -719,6 +738,70 @@
         },
         { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
         { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
+        ...HABIT_SYNC_FIELDS,
+      ],
+    },
+    "habit-tracker": {
+      name: "Habit Tracker",
+      kicker: "Dashboard Widget",
+      interactive: true,
+      description: "Dashboard visual dos hábitos, conectado opcionalmente ao Habit Flow.",
+      defaults: {
+        canvas: "notion-light",
+        style: "minimal",
+        surface: "quiet",
+        texture: "none",
+        font: "sora",
+        align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
+        blur: true,
+        border: "line",
+        shadow: "soft",
+        bg: "#f8f5ee",
+        text: "#111111",
+        accent: "#6ccf79",
+        radius: 28,
+        padding: 26,
+        titleScale: 1,
+        scale: 1,
+        title: "Habit Tracker",
+        kickerText: "",
+        badgeText: "",
+        introText: "Progresso de hoje",
+        completeLabel: "concluído",
+        pendingLabel: "pendente",
+        emptyLabel: "Sem hábitos conectados ainda.",
+        habitsText: "Água\nTreino\nLeitura\nDeep work",
+        checkedText: "1,3",
+        syncHabits: false,
+        habitSyncId: HABIT_SYNC_DEFAULT_ID,
+      },
+      fields: [
+        { key: "title", label: "Título", type: "text", section: "Conteúdo" },
+        { key: "introText", label: "Texto auxiliar", type: "text", section: "Conteúdo" },
+        {
+          key: "habitsText",
+          label: "Hábitos base (standalone)",
+          type: "textarea",
+          section: "Conteúdo",
+        },
+        {
+          key: "checkedText",
+          label: "Marcados inicialmente",
+          type: "text",
+          section: "Conteúdo",
+        },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
+        { key: "completeLabel", label: "Label concluído", type: "text", section: "Texto" },
+        { key: "pendingLabel", label: "Label pendente", type: "text", section: "Texto" },
+        { key: "emptyLabel", label: "Texto vazio", type: "text", section: "Texto" },
+        ...HABIT_SYNC_FIELDS,
       ],
     },
     calendar: {
@@ -959,6 +1042,8 @@
         cleanup = hydrateProgress(root, state, { preview: isPreview });
       } else if (widgetKey === "habits") {
         cleanup = hydrateHabits(root, state, { preview: isPreview });
+      } else if (widgetKey === "habit-tracker") {
+        cleanup = hydrateHabitTracker(root, state, { preview: isPreview });
       } else if (widgetKey === "calendar") {
         cleanup = hydrateCalendar(root, state, { preview: isPreview });
       }
@@ -1106,6 +1191,9 @@
     if (sectionName === "Tipografia") {
       return "Peso e itálico para deixar os textos menos engessados.";
     }
+    if (sectionName === "Conexão") {
+      return "Ative nos dois widgets e use o mesmo ID para compartilhar hábitos e marcações.";
+    }
     if (sectionName === "Conteúdo") {
       if (widgetKey === "pomodoro") {
         return "Esse widget continua funcional no Notion. Defina aqui os tempos iniciais e o visual do card.";
@@ -1118,6 +1206,9 @@
       }
       if (widgetKey === "habits") {
         return "Esse widget continua funcional no Notion. Defina a lista base e depois adicione, edite, remova e marque hábitos direto no embed.";
+      }
+      if (widgetKey === "habit-tracker") {
+        return "Dashboard visual dos hábitos. Com a conexão ativa, ele lê o mesmo progresso do Habit Flow.";
       }
       if (widgetKey === "calendar") {
         return "Esse widget continua funcional no Notion. Escolha o mês inicial e os destaques base; o embed permite navegar e marcar dias.";
@@ -1548,6 +1639,52 @@
       `;
     }
 
+    if (widgetKey === "habit-tracker") {
+      const todayKey = getLocalDateKey(new Date());
+      const initialItems = buildInitialHabitItems(state);
+      const initialDataset = buildInitialHabitDataset(initialItems, todayKey);
+      const metrics = getHabitMetrics(initialDataset, todayKey);
+      return `
+        <section class="${shellClass}">
+          <div class="widget-frame widget-frame--habit-tracker" data-habit-tracker-app>
+            <header class="widget-head">
+              <div class="widget-meta">
+                ${renderOptionalText("span", "widget-kicker", state.kickerText)}
+                <h1 class="widget-title">${escapeHtml(state.title)}</h1>
+              </div>
+              ${renderOptionalText("span", "widget-chip", state.badgeText)}
+            </header>
+            ${renderOptionalText("p", "habit-intro", state.introText)}
+            <div class="habit-tracker-hero">
+              <div class="habit-tracker-ring" data-habit-tracker-ring style="--habit-tracker-progress: ${metrics.percent}%">
+                <strong data-habit-tracker-percent>${metrics.percent}%</strong>
+                <span>${escapeHtml(state.completeLabel)}</span>
+              </div>
+              <div class="habit-tracker-stats">
+                <div>
+                  <span>${escapeHtml(state.completeLabel)}</span>
+                  <strong data-habit-tracker-done>${metrics.done}</strong>
+                </div>
+                <div>
+                  <span>${escapeHtml(state.pendingLabel)}</span>
+                  <strong data-habit-tracker-pending>${metrics.pending}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="habit-tracker-week" data-habit-tracker-week>
+              ${renderHabitTrackerWeek(initialDataset, todayKey)}
+            </div>
+            <div class="habit-tracker-list" data-habit-tracker-list>
+              ${renderHabitTrackerRows(initialDataset, todayKey, state)}
+            </div>
+            <p class="habit-empty" data-habit-tracker-empty ${initialDataset.items.length ? "hidden" : ""}>
+              ${escapeHtml(state.emptyLabel)}
+            </p>
+          </div>
+        </section>
+      `;
+    }
+
     if (widgetKey === "calendar") {
       const calendar = buildCalendarModel(state.monthValue, state.highlightsText);
       return `
@@ -1957,12 +2094,13 @@
     };
     const todayKey = getLocalDateKey(new Date());
     const initialItems = buildInitialHabitItems(state);
-    const storageKey = getWidgetStorageKey("habits");
+    const storageKey = getHabitStorageKey("habits", state);
     const stored = options.preview ? null : readWidgetStorage(storageKey);
-    const storedItems = normalizeStoredHabitItems(stored?.items);
+    const hasStoredItems = Array.isArray(stored?.items);
+    const storedItems = hasStoredItems ? normalizeStoredHabitItems(stored.items) : [];
     const runtime = {
       isEditing: false,
-      items: storedItems.length ? storedItems : initialItems.map(({ id, label }) => ({ id, label })),
+      items: hasStoredItems ? storedItems : initialItems.map(({ id, label }) => ({ id, label })),
       checkedByDate: normalizeHabitCheckedByDate(stored, initialItems, todayKey),
     };
 
@@ -1985,10 +2123,13 @@
       if (options.preview) {
         return;
       }
-      writeWidgetStorage(storageKey, {
+      const payload = {
         items: runtime.items,
         checkedByDate: pruneHabitHistory(runtime.checkedByDate),
-      });
+        updatedAt: Date.now(),
+      };
+      writeWidgetStorage(storageKey, payload);
+      syncBridge.publish(payload);
     };
 
     const render = () => {
@@ -2001,6 +2142,16 @@
       refs.editToggle.classList.toggle("is-active", runtime.isEditing);
       refs.editToggle.setAttribute("aria-pressed", String(runtime.isEditing));
     };
+
+    const applyStoredDataset = (incoming) => {
+      if (Array.isArray(incoming?.items)) {
+        runtime.items = normalizeStoredHabitItems(incoming.items);
+      }
+      runtime.checkedByDate = normalizeHabitCheckedByDate(incoming, initialItems, todayKey);
+      render();
+    };
+
+    const syncBridge = createHabitSyncBridge(storageKey, applyStoredDataset, options);
 
     refs.list.addEventListener("click", (event) => {
       const toggle = event.target.closest("[data-habit-toggle]");
@@ -2125,7 +2276,59 @@
     });
 
     render();
-    return null;
+    if (shouldSyncHabits(state) && !stored && !options.preview) {
+      persist();
+    }
+    return () => {
+      syncBridge.cleanup();
+    };
+  }
+
+  function hydrateHabitTracker(root, state, options = {}) {
+    const app = root.querySelector("[data-habit-tracker-app]");
+    if (!app) {
+      return null;
+    }
+
+    const refs = {
+      ring: app.querySelector("[data-habit-tracker-ring]"),
+      percent: app.querySelector("[data-habit-tracker-percent]"),
+      done: app.querySelector("[data-habit-tracker-done]"),
+      pending: app.querySelector("[data-habit-tracker-pending]"),
+      week: app.querySelector("[data-habit-tracker-week]"),
+      list: app.querySelector("[data-habit-tracker-list]"),
+      empty: app.querySelector("[data-habit-tracker-empty]"),
+    };
+    const todayKey = getLocalDateKey(new Date());
+    const initialItems = buildInitialHabitItems(state);
+    const storageKey = getHabitStorageKey("habit-tracker", state);
+    const stored = options.preview ? null : readWidgetStorage(storageKey);
+    const runtime = {
+      dataset: buildHabitDatasetFromStored(stored, initialItems, todayKey),
+    };
+
+    const render = () => {
+      const metrics = getHabitMetrics(runtime.dataset, todayKey);
+      refs.ring.style.setProperty("--habit-tracker-progress", `${metrics.percent}%`);
+      refs.percent.textContent = `${metrics.percent}%`;
+      refs.done.textContent = String(metrics.done);
+      refs.pending.textContent = String(metrics.pending);
+      refs.week.innerHTML = renderHabitTrackerWeek(runtime.dataset, todayKey);
+      refs.list.innerHTML = renderHabitTrackerRows(runtime.dataset, todayKey, state);
+      refs.empty.hidden = runtime.dataset.items.length > 0;
+    };
+
+    const applyStoredDataset = (incoming) => {
+      runtime.dataset = buildHabitDatasetFromStored(incoming, initialItems, todayKey);
+      render();
+    };
+
+    const syncBridge = createHabitSyncBridge(storageKey, applyStoredDataset, options);
+
+    render();
+    return () => {
+      syncBridge.cleanup();
+    };
   }
 
   function renderHabitRows(items, checkedIds, isEditing) {
@@ -2194,6 +2397,76 @@
       label,
       done: checked.has(index),
     }));
+  }
+
+  function buildInitialHabitDataset(initialItems, todayKey) {
+    return {
+      items: initialItems.map(({ id, label }) => ({ id, label })),
+      checkedByDate: {
+        [todayKey]: initialItems.filter((item) => item.done).map((item) => item.id),
+      },
+    };
+  }
+
+  function buildHabitDatasetFromStored(stored, initialItems, todayKey) {
+    const hasStoredItems = Array.isArray(stored?.items);
+    return {
+      items: hasStoredItems
+        ? normalizeStoredHabitItems(stored.items)
+        : initialItems.map(({ id, label }) => ({ id, label })),
+      checkedByDate: normalizeHabitCheckedByDate(stored, initialItems, todayKey),
+    };
+  }
+
+  function getHabitMetrics(dataset, dateKey) {
+    const items = dataset.items || [];
+    const validIds = new Set(items.map((item) => item.id));
+    const done = new Set(
+      (dataset.checkedByDate?.[dateKey] || []).filter((id) => validIds.has(id))
+    ).size;
+    const total = items.length;
+    return {
+      done,
+      total,
+      pending: Math.max(total - done, 0),
+      percent: total ? Math.round((done / total) * 100) : 0,
+    };
+  }
+
+  function renderHabitTrackerRows(dataset, todayKey, state) {
+    const checkedIds = new Set(dataset.checkedByDate?.[todayKey] || []);
+    return (dataset.items || [])
+      .map((item) => {
+        const isDone = checkedIds.has(item.id);
+        return `
+          <div class="habit-tracker-row ${isDone ? "is-done" : ""}">
+            <span class="habit-mark"></span>
+            <span>${escapeHtml(item.label)}</span>
+            <strong>${escapeHtml(isDone ? state.completeLabel : state.pendingLabel)}</strong>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  function renderHabitTrackerWeek(dataset, todayKey) {
+    const today = parseLocalDateKey(todayKey);
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - index));
+      const dateKey = getLocalDateKey(date);
+      const metrics = getHabitMetrics(dataset, dateKey);
+      const label = new Intl.DateTimeFormat("pt-BR", { weekday: "short" })
+        .format(date)
+        .replaceAll(".", "")
+        .slice(0, 3);
+      return `
+        <div class="habit-tracker-day ${metrics.total > 0 && metrics.done === metrics.total ? "is-complete" : ""}">
+          <span>${escapeHtml(label)}</span>
+          <strong>${metrics.done}/${metrics.total}</strong>
+        </div>
+      `;
+    }).join("");
   }
 
   function normalizeStoredHabitItems(items) {
@@ -2270,6 +2543,14 @@
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
+  }
+
+  function parseLocalDateKey(dateKey) {
+    const [year, month, day] = String(dateKey).split("-").map(Number);
+    if (!year || !month || !day) {
+      return new Date();
+    }
+    return new Date(year, month - 1, day);
   }
 
   function formatHabitDisplayDate(date) {
@@ -2739,6 +3020,91 @@
     return `${STORAGE_NAMESPACE}:${widgetKey}:${url.pathname}?${url.searchParams.toString()}`;
   }
 
+  function getHabitStorageKey(widgetKey, state) {
+    if (shouldSyncHabits(state)) {
+      return `${STORAGE_NAMESPACE}:habit-sync:${getHabitSyncId(state)}`;
+    }
+    return getWidgetStorageKey(widgetKey);
+  }
+
+  function shouldSyncHabits(state) {
+    return state.syncHabits === true || state.syncHabits === "true" || state.syncHabits === "1";
+  }
+
+  function getHabitSyncId(state) {
+    return slugifyHabitLabel(state.habitSyncId || HABIT_SYNC_DEFAULT_ID);
+  }
+
+  function createHabitSyncBridge(storageKey, onUpdate, options = {}) {
+    const bridge = {
+      publish() {},
+      cleanup() {},
+    };
+    if (options.preview || typeof window === "undefined") {
+      return bridge;
+    }
+
+    const sourceId = createHabitId("source");
+    let channel = null;
+    const handleUpdate = (incoming) => {
+      if (!incoming) {
+        return;
+      }
+      onUpdate(incoming);
+    };
+
+    const handleMessage = (event) => {
+      const payload = event.data;
+      if (
+        !payload ||
+        payload.type !== "habit-sync:update" ||
+        payload.storageKey !== storageKey ||
+        payload.sourceId === sourceId
+      ) {
+        return;
+      }
+      handleUpdate(payload.value || readWidgetStorage(storageKey));
+    };
+
+    try {
+      if ("BroadcastChannel" in window) {
+        channel = new BroadcastChannel(HABIT_SYNC_CHANNEL);
+        channel.addEventListener("message", handleMessage);
+      }
+    } catch (error) {
+      channel = null;
+    }
+
+    const handleStorage = (event) => {
+      if (event.key !== storageKey) {
+        return;
+      }
+      handleUpdate(readWidgetStorage(storageKey));
+    };
+    window.addEventListener("storage", handleStorage);
+
+    return {
+      publish(value) {
+        if (!channel) {
+          return;
+        }
+        channel.postMessage({
+          type: "habit-sync:update",
+          storageKey,
+          sourceId,
+          value,
+        });
+      },
+      cleanup() {
+        window.removeEventListener("storage", handleStorage);
+        if (channel) {
+          channel.removeEventListener("message", handleMessage);
+          channel.close();
+        }
+      },
+    };
+  }
+
   function readWidgetStorage(key) {
     try {
       const raw = window.localStorage.getItem(key);
@@ -2769,6 +3135,9 @@
     if (widgetKey === "habits") {
       return "No Notion esse widget continua funcional. Você marca, adiciona, edita, reordena e remove hábitos direto no próprio card.";
     }
+    if (widgetKey === "habit-tracker") {
+      return "No Notion esse widget mostra o progresso dos hábitos. Ative a conexão e use o mesmo ID do Habit Flow para sincronizar.";
+    }
     if (widgetKey === "calendar") {
       return "No Notion esse widget continua funcional. Você navega pelos meses e destaca dias direto no próprio card.";
     }
@@ -2796,6 +3165,9 @@
     }
     if (widgetKey === "habits") {
       return 560;
+    }
+    if (widgetKey === "habit-tracker") {
+      return 620;
     }
     if (widgetKey === "calendar") {
       return 640;
