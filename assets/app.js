@@ -32,6 +32,42 @@
 
   const PREVIEW_MESSAGE_TYPE = "widget-preview:update";
   const PREVIEW_SYNC_DELAY = 60;
+  const WEATHER_GEOCODING_ENDPOINT = "https://geocoding-api.open-meteo.com/v1/search";
+  const WEATHER_FORECAST_ENDPOINT = "https://api.open-meteo.com/v1/forecast";
+  const WEATHER_CACHE_TTL = 10 * 60 * 1000;
+  const WEATHER_CACHE = new Map();
+  const STORAGE_NAMESPACE = "widgets-notion";
+  const CALENDAR_WEEKDAYS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
+  const WEATHER_CODES = {
+    0: { label: "Céu limpo", day: "☀️", night: "🌙" },
+    1: { label: "Quase limpo", day: "🌤️", night: "🌙" },
+    2: { label: "Parcialmente nublado", day: "⛅", night: "☁️" },
+    3: { label: "Encoberto", day: "☁️", night: "☁️" },
+    45: { label: "Neblina", day: "🌫️", night: "🌫️" },
+    48: { label: "Neblina congelante", day: "🌫️", night: "🌫️" },
+    51: { label: "Garoa leve", day: "🌦️", night: "🌦️" },
+    53: { label: "Garoa moderada", day: "🌦️", night: "🌦️" },
+    55: { label: "Garoa intensa", day: "🌧️", night: "🌧️" },
+    56: { label: "Garoa gelada leve", day: "🌨️", night: "🌨️" },
+    57: { label: "Garoa gelada intensa", day: "🌨️", night: "🌨️" },
+    61: { label: "Chuva leve", day: "🌦️", night: "🌧️" },
+    63: { label: "Chuva moderada", day: "🌧️", night: "🌧️" },
+    65: { label: "Chuva forte", day: "🌧️", night: "🌧️" },
+    66: { label: "Chuva gelada leve", day: "🌨️", night: "🌨️" },
+    67: { label: "Chuva gelada forte", day: "🌨️", night: "🌨️" },
+    71: { label: "Neve leve", day: "🌨️", night: "🌨️" },
+    73: { label: "Neve moderada", day: "🌨️", night: "🌨️" },
+    75: { label: "Neve forte", day: "❄️", night: "❄️" },
+    77: { label: "Grãos de neve", day: "❄️", night: "❄️" },
+    80: { label: "Pancadas leves", day: "🌦️", night: "🌧️" },
+    81: { label: "Pancadas moderadas", day: "🌧️", night: "🌧️" },
+    82: { label: "Pancadas fortes", day: "⛈️", night: "⛈️" },
+    85: { label: "Nevasca leve", day: "🌨️", night: "🌨️" },
+    86: { label: "Nevasca forte", day: "❄️", night: "❄️" },
+    95: { label: "Trovoadas", day: "⛈️", night: "⛈️" },
+    96: { label: "Trovoadas com granizo", day: "⛈️", night: "⛈️" },
+    99: { label: "Trovoadas severas", day: "⛈️", night: "⛈️" },
+  };
 
   const FONT_STYLESHEETS = {
     grotesk:
@@ -497,8 +533,8 @@
     weather: {
       name: "Clima",
       kicker: "Weather Widget",
-      interactive: false,
-      description: "Snapshot visual de clima para dashboards pessoais e páginas iniciais.",
+      interactive: true,
+      description: "Clima ao vivo por cidade, com refresh direto no próprio embed.",
       defaults: {
         canvas: "notion-light",
         style: "minimal",
@@ -526,6 +562,8 @@
         kickerText: "",
         badgeText: "",
         city: "São Paulo",
+        countryCode: "",
+        temperatureUnit: "celsius",
         icon: "☁️",
         temperature: "24",
         condition: "Parcialmente nublado",
@@ -539,14 +577,19 @@
       fields: [
         { key: "title", label: "Título", type: "text", section: "Conteúdo" },
         { key: "city", label: "Cidade", type: "text", section: "Conteúdo" },
-        { key: "temperature", label: "Temperatura", type: "text", section: "Conteúdo" },
-        { key: "condition", label: "Condição", type: "text", section: "Conteúdo" },
-        { key: "highTemp", label: "Máxima", type: "text", section: "Conteúdo" },
-        { key: "lowTemp", label: "Mínima", type: "text", section: "Conteúdo" },
-        { key: "stamp", label: "Momento", type: "text", section: "Conteúdo" },
+        { key: "countryCode", label: "País (ISO)", type: "text", section: "Conteúdo" },
+        {
+          key: "temperatureUnit",
+          label: "Unidade",
+          type: "select",
+          section: "Conteúdo",
+          options: [
+            { value: "celsius", label: "Celsius" },
+            { value: "fahrenheit", label: "Fahrenheit" },
+          ],
+        },
         { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
         { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
-        { key: "icon", label: "Ícone", type: "text", section: "Texto" },
         { key: "highLabel", label: "Label máxima", type: "text", section: "Texto" },
         { key: "lowLabel", label: "Label mínima", type: "text", section: "Texto" },
         { key: "stampLabel", label: "Label momento", type: "text", section: "Texto" },
@@ -555,8 +598,8 @@
     progress: {
       name: "Progress",
       kicker: "Goal Widget",
-      interactive: false,
-      description: "Barra de progresso para metas, leitura, projeto ou hábitos do mês.",
+      interactive: true,
+      description: "Meta funcional com ajuste de progresso direto no card.",
       defaults: {
         canvas: "notion-light",
         style: "soft",
@@ -586,6 +629,7 @@
         current: 72,
         total: 100,
         unit: "%",
+        stepAmount: 1,
         note: "Fechamento do trimestre",
       },
       fields: [
@@ -609,6 +653,15 @@
           step: 1,
         },
         { key: "unit", label: "Unidade", type: "text", section: "Conteúdo" },
+        {
+          key: "stepAmount",
+          label: "Passo por clique",
+          type: "number",
+          section: "Conteúdo",
+          min: 1,
+          max: 1000,
+          step: 1,
+        },
         { key: "note", label: "Nota", type: "text", section: "Conteúdo" },
         { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
         { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
@@ -671,8 +724,8 @@
     calendar: {
       name: "Mini Calendar",
       kicker: "Planning Widget",
-      interactive: false,
-      description: "Calendário compacto para destacar datas, checkpoints e janelas do mês.",
+      interactive: true,
+      description: "Calendário navegável com destaque de dias direto no embed.",
       defaults: {
         canvas: "notion-light",
         style: "glass",
@@ -699,7 +752,7 @@
         title: "Month View",
         kickerText: "",
         badgeText: "",
-        monthValue: "2026-05",
+        monthValue: formatMonthValue(new Date()),
         note: "Sprint checkpoints",
         highlightsText: "3,7,12,18,24",
       },
@@ -859,12 +912,15 @@
     });
 
     updateRangeHints(form, widgetKey, state);
-    previewFrame.src = `embed.html?${serializeWidgetState(widgetKey, state).toString()}`;
+    const previewParams = serializeWidgetState(widgetKey, state);
+    previewParams.set("preview", "1");
+    previewFrame.src = `embed.html?${previewParams.toString()}`;
     sync();
   }
 
   function initEmbed() {
     const params = new URLSearchParams(window.location.search);
+    const isPreview = params.get("preview") === "1";
     let widgetKey = getWidgetKey(params.get("widget"));
     let state = buildState(widgetKey, params);
     const root = document.getElementById("embed-root");
@@ -894,11 +950,17 @@
       applyWidgetShellStyles(shell, state);
 
       if (widgetKey === "pomodoro") {
-        cleanup = hydratePomodoro(root, state);
+        cleanup = hydratePomodoro(root, state, { preview: isPreview });
       } else if (widgetKey === "countdown") {
-        cleanup = hydrateCountdown(root, state);
+        cleanup = hydrateCountdown(root, state, { preview: isPreview });
+      } else if (widgetKey === "weather") {
+        cleanup = hydrateWeather(root, state, { preview: isPreview });
+      } else if (widgetKey === "progress") {
+        cleanup = hydrateProgress(root, state, { preview: isPreview });
       } else if (widgetKey === "habits") {
-        cleanup = hydrateHabits(root, state);
+        cleanup = hydrateHabits(root, state, { preview: isPreview });
+      } else if (widgetKey === "calendar") {
+        cleanup = hydrateCalendar(root, state, { preview: isPreview });
       }
     };
 
@@ -1045,8 +1107,20 @@
       return "Peso e itálico para deixar os textos menos engessados.";
     }
     if (sectionName === "Conteúdo") {
-      if (WIDGETS[widgetKey].interactive) {
+      if (widgetKey === "pomodoro") {
         return "Esse widget continua funcional no Notion. Defina aqui os tempos iniciais e o visual do card.";
+      }
+      if (widgetKey === "weather") {
+        return "Esse widget busca clima real pela cidade informada. O card atualiza sozinho ao abrir e pode ser recarregado no embed.";
+      }
+      if (widgetKey === "progress") {
+        return "Esse widget continua funcional no Notion. Defina a meta inicial e depois ajuste o progresso direto no card.";
+      }
+      if (widgetKey === "habits") {
+        return "Esse widget continua funcional no Notion. Defina a lista base e o embed guarda o que foi marcado.";
+      }
+      if (widgetKey === "calendar") {
+        return "Esse widget continua funcional no Notion. Escolha o mês inicial e os destaques base; o embed permite navegar e marcar dias.";
       }
       return "No Notion o widget é só leitura. Ajuste aqui tudo o que aparece no embed.";
     }
@@ -1348,7 +1422,7 @@
     if (widgetKey === "weather") {
       return `
         <section class="${shellClass}">
-          <div class="widget-frame widget-frame--weather">
+          <div class="widget-frame widget-frame--weather" data-weather-app>
             <header class="widget-head">
               <div class="widget-meta">
                 ${renderOptionalText("span", "widget-kicker", state.kickerText)}
@@ -1358,24 +1432,34 @@
             </header>
             <div class="weather-hero">
               <div class="weather-copy">
-                <span class="weather-city">${escapeHtml(state.city)}</span>
-                <strong class="weather-temp">${escapeHtml(state.temperature)}°</strong>
-                <p class="weather-condition">${escapeHtml(state.condition)}</p>
+                <span class="weather-city" data-weather-city>${escapeHtml(state.city)}</span>
+                <strong class="weather-temp" data-weather-temp>${escapeHtml(state.temperature)}°</strong>
+                <p class="weather-condition" data-weather-condition>${escapeHtml(state.condition)}</p>
               </div>
-              <div class="weather-icon">${escapeHtml(state.icon)}</div>
+              <div class="weather-aside">
+                <div class="weather-icon" data-weather-icon>${escapeHtml(state.icon)}</div>
+                <button
+                  class="widget-icon-button weather-refresh"
+                  type="button"
+                  data-weather-refresh
+                  aria-label="Atualizar clima"
+                >
+                  ↻
+                </button>
+              </div>
             </div>
             <div class="weather-stats">
               <div class="weather-stat">
                 <span class="weather-stat-label">${escapeHtml(state.highLabel || "Máx")}</span>
-                <strong>${escapeHtml(state.highTemp)}°</strong>
+                <strong data-weather-high>${escapeHtml(state.highTemp)}°</strong>
               </div>
               <div class="weather-stat">
                 <span class="weather-stat-label">${escapeHtml(state.lowLabel || "Mín")}</span>
-                <strong>${escapeHtml(state.lowTemp)}°</strong>
+                <strong data-weather-low>${escapeHtml(state.lowTemp)}°</strong>
               </div>
               <div class="weather-stat">
                 <span class="weather-stat-label">${escapeHtml(state.stampLabel || "Momento")}</span>
-                <strong>${escapeHtml(state.stamp)}</strong>
+                <strong data-weather-stamp>${escapeHtml(state.stamp)}</strong>
               </div>
             </div>
           </div>
@@ -1387,7 +1471,13 @@
       const percent = getProgressPercent(state.current, state.total);
       return `
         <section class="${shellClass}">
-          <div class="widget-frame widget-frame--progress">
+          <div
+            class="widget-frame widget-frame--progress"
+            data-progress-app
+            data-progress-current="${escapeHtml(String(state.current))}"
+            data-progress-total="${escapeHtml(String(state.total))}"
+            data-progress-step="${escapeHtml(String(state.stepAmount || 1))}"
+          >
             <header class="widget-head">
               <div class="widget-meta">
                 ${renderOptionalText("span", "widget-kicker", state.kickerText)}
@@ -1396,11 +1486,19 @@
               ${renderOptionalText("span", "widget-chip", state.badgeText)}
             </header>
             <div class="progress-reading">
-              <strong class="progress-numerator">${escapeHtml(String(state.current))}${escapeHtml(state.unit)}</strong>
-              <span class="progress-percent">${percent}%</span>
+              <strong class="progress-numerator" data-progress-numerator>${escapeHtml(String(state.current))}${escapeHtml(state.unit)}</strong>
+              <span class="progress-percent" data-progress-percent>${percent}%</span>
             </div>
             <div class="progress-bar">
-              <span class="progress-bar-fill" style="width: ${percent}%"></span>
+              <span class="progress-bar-fill" data-progress-fill style="width: ${percent}%"></span>
+            </div>
+            <div class="progress-meta">
+              <span class="progress-fraction" data-progress-fraction>${escapeHtml(String(state.current))}/${escapeHtml(String(state.total))}</span>
+              <div class="progress-actions" aria-label="Ajustes de progresso">
+                <button class="widget-icon-button" type="button" data-progress-action="decrement" aria-label="Diminuir">−</button>
+                <button class="widget-icon-button is-primary" type="button" data-progress-action="increment" aria-label="Aumentar">+</button>
+                <button class="widget-icon-button" type="button" data-progress-action="reset" aria-label="Resetar">↺</button>
+              </div>
             </div>
             ${renderOptionalText("p", "progress-note", state.note)}
           </div>
@@ -1424,6 +1522,7 @@
             ${renderOptionalText("p", "habit-intro", state.introText)}
             <div class="habit-progress">
               <strong data-habit-count>${checked.size}/${habits.length}</strong>
+              <button class="widget-icon-button" type="button" data-habit-reset aria-label="Restaurar estado inicial">↺</button>
             </div>
             <div class="habit-list">
               ${habits
@@ -1451,7 +1550,12 @@
       const calendar = buildCalendarModel(state.monthValue, state.highlightsText);
       return `
         <section class="${shellClass}">
-          <div class="widget-frame widget-frame--calendar">
+          <div
+            class="widget-frame widget-frame--calendar"
+            data-calendar-app
+            data-calendar-month="${escapeHtml(calendar.monthValue)}"
+            data-calendar-highlights="${escapeHtml(state.highlightsText || "")}"
+          >
             <header class="widget-head">
               <div class="widget-meta">
                 ${renderOptionalText("span", "widget-kicker", state.kickerText)}
@@ -1460,13 +1564,20 @@
               ${renderOptionalText("span", "widget-chip", state.badgeText)}
             </header>
             <div class="calendar-summary">
-              <strong class="calendar-month-label">${escapeHtml(calendar.label)}</strong>
-              ${renderOptionalText("span", "calendar-note", state.note)}
+              <div class="calendar-nav">
+                <button class="widget-icon-button" type="button" data-calendar-nav="prev" aria-label="Mês anterior">←</button>
+                <strong class="calendar-month-label" data-calendar-month-label>${escapeHtml(calendar.label)}</strong>
+                <button class="widget-icon-button" type="button" data-calendar-nav="next" aria-label="Próximo mês">→</button>
+              </div>
+              <div class="calendar-summary-side">
+                ${renderOptionalText("span", "calendar-note", state.note)}
+                <button class="widget-icon-button" type="button" data-calendar-nav="today" aria-label="Voltar para hoje">•</button>
+              </div>
             </div>
             <div class="calendar-weekdays">
               ${calendar.weekdays.map((day) => `<span>${escapeHtml(day)}</span>`).join("")}
             </div>
-            <div class="calendar-grid">
+            <div class="calendar-grid" data-calendar-grid>
               ${calendar.days
                 .map((day) => {
                   if (!day.inMonth) {
@@ -1479,7 +1590,16 @@
                   ]
                     .filter(Boolean)
                     .join(" ");
-                  return `<span class="${className}">${day.day}</span>`;
+                  return `
+                    <button
+                      class="${className}"
+                      type="button"
+                      data-calendar-day="${day.day}"
+                      aria-pressed="${day.isHighlighted ? "true" : "false"}"
+                    >
+                      ${day.day}
+                    </button>
+                  `;
                 })
                 .join("")}
             </div>
@@ -1682,7 +1802,141 @@
     };
   }
 
-  function hydrateHabits(root, state) {
+  function hydrateWeather(root, state) {
+    const app = root.querySelector("[data-weather-app]");
+    if (!app) {
+      return null;
+    }
+
+    const refs = {
+      city: app.querySelector("[data-weather-city]"),
+      temp: app.querySelector("[data-weather-temp]"),
+      condition: app.querySelector("[data-weather-condition]"),
+      icon: app.querySelector("[data-weather-icon]"),
+      high: app.querySelector("[data-weather-high]"),
+      low: app.querySelector("[data-weather-low]"),
+      stamp: app.querySelector("[data-weather-stamp]"),
+      refresh: app.querySelector("[data-weather-refresh]"),
+    };
+    const fallback = {
+      city: state.city,
+      temperature: Number(state.temperature) || state.temperature,
+      condition: state.condition,
+      icon: state.icon,
+      high: Number(state.highTemp) || state.highTemp,
+      low: Number(state.lowTemp) || state.lowTemp,
+      stamp: state.stamp,
+    };
+    let disposed = false;
+
+    const render = (snapshot) => {
+      refs.city.textContent = snapshot.city || state.city;
+      refs.temp.textContent = `${snapshot.temperature}°`;
+      refs.condition.textContent = snapshot.condition || state.condition;
+      refs.icon.textContent = snapshot.icon || state.icon;
+      refs.high.textContent = `${snapshot.high}°`;
+      refs.low.textContent = `${snapshot.low}°`;
+      refs.stamp.textContent = snapshot.stamp || state.stamp;
+    };
+
+    const sync = async (force = false) => {
+      if (!state.city.trim()) {
+        render(fallback);
+        return;
+      }
+
+      refs.refresh.disabled = true;
+      try {
+        const snapshot = await loadWeatherSnapshot(state, { force });
+        if (!disposed) {
+          render(snapshot);
+        }
+      } catch (error) {
+        if (!disposed) {
+          render({
+            ...fallback,
+            stamp: state.stamp || "sem sinal",
+          });
+        }
+      } finally {
+        refs.refresh.disabled = false;
+      }
+    };
+
+    refs.refresh.addEventListener("click", () => {
+      sync(true);
+    });
+
+    render(fallback);
+    sync(false);
+    return () => {
+      disposed = true;
+    };
+  }
+
+  function hydrateProgress(root, state, options = {}) {
+    const app = root.querySelector("[data-progress-app]");
+    if (!app) {
+      return null;
+    }
+
+    const refs = {
+      numerator: app.querySelector("[data-progress-numerator]"),
+      percent: app.querySelector("[data-progress-percent]"),
+      fraction: app.querySelector("[data-progress-fraction]"),
+      fill: app.querySelector("[data-progress-fill]"),
+      actions: Array.from(app.querySelectorAll("[data-progress-action]")),
+    };
+    const storageKey = getWidgetStorageKey("progress");
+    const stored = options.preview ? null : readWidgetStorage(storageKey);
+    const initialCurrent = clampProgressValue(state.current, state.total);
+    const runtime = {
+      current: clampProgressValue(stored?.current ?? initialCurrent, state.total),
+      total: Math.max(1, Number(state.total) || 1),
+      step: Math.max(1, Number(state.stepAmount) || 1),
+    };
+
+    const persist = () => {
+      if (options.preview) {
+        return;
+      }
+      writeWidgetStorage(storageKey, { current: runtime.current });
+    };
+
+    const render = () => {
+      const percent = getProgressPercent(runtime.current, runtime.total);
+      refs.numerator.textContent = `${runtime.current}${state.unit}`;
+      refs.percent.textContent = `${percent}%`;
+      refs.fraction.textContent = `${runtime.current}/${runtime.total}`;
+      refs.fill.style.width = `${percent}%`;
+    };
+
+    const commit = (nextCurrent) => {
+      runtime.current = clampProgressValue(nextCurrent, runtime.total);
+      persist();
+      render();
+    };
+
+    refs.actions.forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.progressAction;
+        if (action === "increment") {
+          commit(runtime.current + runtime.step);
+          return;
+        }
+        if (action === "decrement") {
+          commit(runtime.current - runtime.step);
+          return;
+        }
+        commit(initialCurrent);
+      });
+    });
+
+    render();
+    return null;
+  }
+
+  function hydrateHabits(root, state, options = {}) {
     const app = root.querySelector("[data-habit-app]");
     if (!app) {
       return null;
@@ -1690,7 +1944,24 @@
 
     const items = Array.from(app.querySelectorAll("[data-habit-item]"));
     const count = app.querySelector("[data-habit-count]");
-    const active = parseCheckedIndexes(state.checkedText, items.length);
+    const resetButton = app.querySelector("[data-habit-reset]");
+    const initialChecked = parseCheckedIndexes(state.checkedText, items.length);
+    const storageKey = getWidgetStorageKey("habits");
+    const stored = options.preview ? null : readWidgetStorage(storageKey);
+    const active = new Set(
+      Array.isArray(stored?.checked)
+        ? stored.checked.filter((index) => Number.isInteger(index) && index >= 0 && index < items.length)
+        : Array.from(initialChecked)
+    );
+
+    const persist = () => {
+      if (options.preview) {
+        return;
+      }
+      writeWidgetStorage(storageKey, {
+        checked: Array.from(active).sort((left, right) => left - right),
+      });
+    };
 
     const render = () => {
       items.forEach((item, index) => {
@@ -1708,6 +1979,150 @@
         } else {
           active.add(index);
         }
+        persist();
+        render();
+      });
+    });
+
+    if (resetButton) {
+      resetButton.addEventListener("click", () => {
+        active.clear();
+        initialChecked.forEach((index) => {
+          active.add(index);
+        });
+        persist();
+        render();
+      });
+    }
+
+    render();
+    return null;
+  }
+
+  function hydrateCalendar(root, state, options = {}) {
+    const app = root.querySelector("[data-calendar-app]");
+    if (!app) {
+      return null;
+    }
+
+    const refs = {
+      label: app.querySelector("[data-calendar-month-label]"),
+      grid: app.querySelector("[data-calendar-grid]"),
+      navButtons: Array.from(app.querySelectorAll("[data-calendar-nav]")),
+    };
+    const initialMonth = normalizeMonthValue(state.monthValue);
+    const initialHighlights = parseHighlightDays(state.highlightsText);
+    const storageKey = getWidgetStorageKey("calendar");
+    const stored = options.preview ? null : readWidgetStorage(storageKey);
+    const highlightsByMonth = new Map();
+
+    highlightsByMonth.set(initialMonth, new Set(initialHighlights));
+    if (stored?.highlightsByMonth && typeof stored.highlightsByMonth === "object") {
+      Object.entries(stored.highlightsByMonth).forEach(([monthValue, values]) => {
+        highlightsByMonth.set(
+          normalizeMonthValue(monthValue),
+          new Set(
+            Array.isArray(values)
+              ? values.filter((day) => Number.isInteger(day) && day >= 1 && day <= 31)
+              : []
+          )
+        );
+      });
+    }
+
+    const runtime = {
+      monthValue: normalizeMonthValue(stored?.monthValue || initialMonth),
+    };
+
+    const getMonthHighlights = (monthValue) => {
+      const normalized = normalizeMonthValue(monthValue);
+      if (!highlightsByMonth.has(normalized)) {
+        highlightsByMonth.set(normalized, new Set());
+      }
+      return highlightsByMonth.get(normalized);
+    };
+
+    const persist = () => {
+      if (options.preview) {
+        return;
+      }
+      const payload = {
+        monthValue: runtime.monthValue,
+        highlightsByMonth: Object.fromEntries(
+          Array.from(highlightsByMonth.entries()).map(([monthValue, days]) => [
+            monthValue,
+            Array.from(days).sort((left, right) => left - right),
+          ])
+        ),
+      };
+      writeWidgetStorage(storageKey, payload);
+    };
+
+    const render = () => {
+      const highlightSet = getMonthHighlights(runtime.monthValue);
+      const calendar = buildCalendarModel(
+        runtime.monthValue,
+        Array.from(highlightSet)
+          .sort((left, right) => left - right)
+          .join(",")
+      );
+      refs.label.textContent = calendar.label;
+      refs.grid.innerHTML = calendar.days
+        .map((day) => {
+          if (!day.inMonth) {
+            return `<span class="calendar-day calendar-day--empty"></span>`;
+          }
+          const className = [
+            "calendar-day",
+            day.isToday ? "is-today" : "",
+            day.isHighlighted ? "is-highlighted" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          return `
+            <button
+              class="${className}"
+              type="button"
+              data-calendar-day="${day.day}"
+              aria-pressed="${day.isHighlighted ? "true" : "false"}"
+            >
+              ${day.day}
+            </button>
+          `;
+        })
+        .join("");
+    };
+
+    refs.grid.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-calendar-day]");
+      if (!target) {
+        return;
+      }
+      const day = Number(target.dataset.calendarDay);
+      if (!Number.isInteger(day)) {
+        return;
+      }
+      const highlightSet = getMonthHighlights(runtime.monthValue);
+      if (highlightSet.has(day)) {
+        highlightSet.delete(day);
+      } else {
+        highlightSet.add(day);
+      }
+      persist();
+      render();
+    });
+
+    refs.navButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const action = button.dataset.calendarNav;
+        if (action === "prev") {
+          runtime.monthValue = shiftMonthValue(runtime.monthValue, -1);
+        } else if (action === "next") {
+          runtime.monthValue = shiftMonthValue(runtime.monthValue, 1);
+        } else {
+          runtime.monthValue = formatMonthValue(new Date());
+        }
+        persist();
         render();
       });
     });
@@ -1811,10 +2226,141 @@
     return [prefix, suffix].filter(Boolean).join(" ").trim();
   }
 
+  async function loadWeatherSnapshot(state, { force = false } = {}) {
+    const city = String(state.city || "").trim();
+    if (!city) {
+      throw new Error("Missing city");
+    }
+
+    const countryCode = String(state.countryCode || "")
+      .trim()
+      .slice(0, 2)
+      .toUpperCase();
+    const unit = state.temperatureUnit === "fahrenheit" ? "fahrenheit" : "celsius";
+    const cacheKey = [city.toLowerCase(), countryCode, unit].join("|");
+    const cached = WEATHER_CACHE.get(cacheKey);
+
+    if (!force && cached?.data && Date.now() - cached.timestamp < WEATHER_CACHE_TTL) {
+      return cached.data;
+    }
+    if (!force && cached?.promise) {
+      return cached.promise;
+    }
+
+    const promise = (async () => {
+      const geocodingUrl = new URL(WEATHER_GEOCODING_ENDPOINT);
+      geocodingUrl.searchParams.set("name", city);
+      geocodingUrl.searchParams.set("count", "1");
+      geocodingUrl.searchParams.set("language", "pt");
+      geocodingUrl.searchParams.set("format", "json");
+      if (countryCode) {
+        geocodingUrl.searchParams.set("countryCode", countryCode);
+      }
+
+      const geocoding = await fetchJson(geocodingUrl.toString());
+      const location = geocoding?.results?.[0];
+      if (!location) {
+        throw new Error("Location not found");
+      }
+
+      const forecastUrl = new URL(WEATHER_FORECAST_ENDPOINT);
+      forecastUrl.searchParams.set("latitude", String(location.latitude));
+      forecastUrl.searchParams.set("longitude", String(location.longitude));
+      forecastUrl.searchParams.set("timezone", "auto");
+      forecastUrl.searchParams.set("current", "temperature_2m,weather_code,is_day");
+      forecastUrl.searchParams.set("daily", "temperature_2m_max,temperature_2m_min");
+      forecastUrl.searchParams.set("forecast_days", "1");
+      forecastUrl.searchParams.set("temperature_unit", unit);
+
+      const forecast = await fetchJson(forecastUrl.toString());
+      const weatherCode = Number(forecast?.current?.weather_code);
+      const isDay = Number(forecast?.current?.is_day) === 1;
+      const weatherCopy = getWeatherCodeCopy(weatherCode, isDay);
+      const snapshot = {
+        city: location.name || city,
+        temperature: roundWeatherNumber(forecast?.current?.temperature_2m, state.temperature),
+        condition: weatherCopy.label,
+        icon: weatherCopy.icon,
+        high: roundWeatherNumber(forecast?.daily?.temperature_2m_max?.[0], state.highTemp),
+        low: roundWeatherNumber(forecast?.daily?.temperature_2m_min?.[0], state.lowTemp),
+        stamp: formatWeatherStamp(forecast?.current?.time, location.timezone) || state.stamp,
+      };
+      WEATHER_CACHE.set(cacheKey, {
+        data: snapshot,
+        timestamp: Date.now(),
+      });
+      return snapshot;
+    })();
+
+    WEATHER_CACHE.set(cacheKey, {
+      data: cached?.data || null,
+      timestamp: cached?.timestamp || 0,
+      promise,
+    });
+
+    try {
+      return await promise;
+    } finally {
+      const entry = WEATHER_CACHE.get(cacheKey);
+      if (entry?.promise === promise) {
+        if (entry.data) {
+          WEATHER_CACHE.set(cacheKey, {
+            data: entry.data,
+            timestamp: entry.timestamp || Date.now(),
+          });
+        } else {
+          WEATHER_CACHE.delete(cacheKey);
+        }
+      }
+    }
+  }
+
+  function fetchJson(url) {
+    return fetch(url).then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    });
+  }
+
+  function getWeatherCodeCopy(code, isDay) {
+    const match = WEATHER_CODES[code] || WEATHER_CODES[3];
+    return {
+      label: match.label,
+      icon: isDay ? match.day : match.night,
+    };
+  }
+
+  function roundWeatherNumber(value, fallback) {
+    const numeric = Number(value);
+    if (Number.isFinite(numeric)) {
+      return Math.round(numeric);
+    }
+    return Number(fallback) || fallback;
+  }
+
+  function formatWeatherStamp(value) {
+    if (!value) {
+      return "";
+    }
+    const match = String(value).match(/(\d{2}:\d{2})/);
+    return match ? match[1] : String(value);
+  }
+
   function getProgressPercent(current, total) {
     const safeCurrent = Math.max(0, Number(current) || 0);
     const safeTotal = Math.max(1, Number(total) || 1);
     return Math.min(100, Math.max(0, Math.round((safeCurrent / safeTotal) * 100)));
+  }
+
+  function clampProgressValue(current, total) {
+    const safeTotal = Math.max(1, Number(total) || 1);
+    const safeCurrent = Number(current);
+    if (!Number.isFinite(safeCurrent)) {
+      return 0;
+    }
+    return Math.min(safeTotal, Math.max(0, Math.round(safeCurrent)));
   }
 
   function parseHabitLines(value) {
@@ -1834,20 +2380,23 @@
     );
   }
 
+  function parseHighlightDays(value, maxDay = 31) {
+    return String(value || "")
+      .split(",")
+      .map((item) => Number(item.trim()))
+      .filter((day) => Number.isInteger(day) && day >= 1 && day <= maxDay);
+  }
+
   function buildCalendarModel(monthValue, highlightsText) {
-    const [yearString, monthString] = String(monthValue || "").split("-");
-    const year = Number(yearString) || new Date().getFullYear();
-    const monthIndex = (Number(monthString) || 1) - 1;
+    const normalizedMonth = normalizeMonthValue(monthValue);
+    const [yearString, monthString] = normalizedMonth.split("-");
+    const year = Number(yearString);
+    const monthIndex = Number(monthString) - 1;
     const firstDay = new Date(year, monthIndex, 1);
     const lastDay = new Date(year, monthIndex + 1, 0);
     const firstWeekday = (firstDay.getDay() + 6) % 7;
     const daysInMonth = lastDay.getDate();
-    const highlightSet = new Set(
-      String(highlightsText || "")
-        .split(",")
-        .map((item) => Number(item.trim()))
-        .filter((day) => Number.isInteger(day) && day >= 1 && day <= daysInMonth)
-    );
+    const highlightSet = new Set(parseHighlightDays(highlightsText, daysInMonth));
     const today = new Date();
     const isCurrentMonth =
       today.getFullYear() === year && today.getMonth() === monthIndex;
@@ -1875,17 +2424,70 @@
         month: "long",
         year: "numeric",
       }).format(firstDay),
-      weekdays: ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"],
+      monthValue: normalizedMonth,
+      weekdays: CALENDAR_WEEKDAYS,
       days,
     };
+  }
+
+  function normalizeMonthValue(value) {
+    if (typeof value === "string" && /^\d{4}-\d{2}$/.test(value)) {
+      return value;
+    }
+    return formatMonthValue(new Date());
+  }
+
+  function formatMonthValue(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    return `${year}-${month}`;
+  }
+
+  function shiftMonthValue(monthValue, offset) {
+    const normalized = normalizeMonthValue(monthValue);
+    const [yearString, monthString] = normalized.split("-");
+    const nextDate = new Date(Number(yearString), Number(monthString) - 1 + offset, 1);
+    return formatMonthValue(nextDate);
+  }
+
+  function getWidgetStorageKey(widgetKey) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("preview");
+    return `${STORAGE_NAMESPACE}:${widgetKey}:${url.pathname}?${url.searchParams.toString()}`;
+  }
+
+  function readWidgetStorage(key) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function writeWidgetStorage(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      // Ignore persistence failures and keep the widget interactive in-memory.
+    }
   }
 
   function getEmbedBehaviorCopy(widgetKey) {
     if (widgetKey === "pomodoro") {
       return "No Notion esse widget continua funcional. Start, pause, reset e ajuste de tempo acontecem no próprio card.";
     }
+    if (widgetKey === "weather") {
+      return "No Notion esse widget busca clima real da cidade informada e pode ser atualizado no próprio card.";
+    }
+    if (widgetKey === "progress") {
+      return "No Notion esse widget continua funcional. Você ajusta a meta com +, -, e reset direto no card.";
+    }
     if (widgetKey === "habits") {
       return "No Notion esse widget continua funcional. Você marca e desmarca os hábitos direto no próprio card.";
+    }
+    if (widgetKey === "calendar") {
+      return "No Notion esse widget continua funcional. Você navega pelos meses e destaca dias direto no próprio card.";
     }
     return "No Notion esse widget é só leitura. Mudanças de tempo, estado, texto e visual são feitas aqui no editor.";
   }
@@ -1904,16 +2506,16 @@
       return 620;
     }
     if (widgetKey === "weather") {
-      return 560;
+      return 580;
     }
     if (widgetKey === "progress") {
-      return 580;
+      return 600;
     }
     if (widgetKey === "habits") {
       return 560;
     }
     if (widgetKey === "calendar") {
-      return 620;
+      return 640;
     }
     return 560;
   }
