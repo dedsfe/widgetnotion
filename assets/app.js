@@ -1117,7 +1117,7 @@
         return "Esse widget continua funcional no Notion. Defina a meta inicial e depois ajuste o progresso direto no card.";
       }
       if (widgetKey === "habits") {
-        return "Esse widget continua funcional no Notion. Defina a lista base e o embed guarda o que foi marcado.";
+        return "Esse widget continua funcional no Notion. Defina a lista base e depois adicione, edite, remova e marque hábitos direto no embed.";
       }
       if (widgetKey === "calendar") {
         return "Esse widget continua funcional no Notion. Escolha o mês inicial e os destaques base; o embed permite navegar e marcar dias.";
@@ -1507,11 +1507,13 @@
     }
 
     if (widgetKey === "habits") {
-      const habits = parseHabitLines(state.habitsText);
-      const checked = parseCheckedIndexes(state.checkedText, habits.length);
+      const initialItems = buildInitialHabitItems(state);
+      const initialCheckedIds = new Set(
+        initialItems.filter((item) => item.done).map((item) => item.id)
+      );
       return `
         <section class="${shellClass}">
-          <div class="widget-frame widget-frame--habits" data-habit-app data-checked="${escapeHtml(Array.from(checked).join(","))}">
+          <div class="widget-frame widget-frame--habits" data-habit-app>
             <header class="widget-head">
               <div class="widget-meta">
                 ${renderOptionalText("span", "widget-kicker", state.kickerText)}
@@ -1521,25 +1523,25 @@
             </header>
             ${renderOptionalText("p", "habit-intro", state.introText)}
             <div class="habit-progress">
-              <strong data-habit-count>${checked.size}/${habits.length}</strong>
-              <button class="widget-icon-button" type="button" data-habit-reset aria-label="Restaurar estado inicial">↺</button>
+              <div class="habit-progress-copy">
+                <strong data-habit-count>${initialCheckedIds.size}/${initialItems.length}</strong>
+                <span class="habit-date" data-habit-date>${escapeHtml(formatHabitDisplayDate(new Date()))}</span>
+              </div>
+              <div class="habit-actions">
+                <button class="widget-icon-button" type="button" data-habit-edit-toggle aria-label="Editar hábitos">✎</button>
+                <button class="widget-icon-button" type="button" data-habit-reset aria-label="Limpar marcações do dia">↺</button>
+              </div>
             </div>
-            <div class="habit-list">
-              ${habits
-                .map(
-                  (habit, index) => `
-                    <button
-                      class="habit-item ${checked.has(index) ? "is-done" : ""}"
-                      type="button"
-                      data-habit-item="${index}"
-                      aria-pressed="${checked.has(index) ? "true" : "false"}"
-                    >
-                      <span class="habit-mark"></span>
-                      <span class="habit-label">${escapeHtml(habit)}</span>
-                    </button>
-                  `
-                )
-                .join("")}
+            <div class="habit-list" data-habit-list>
+              ${renderHabitRows(initialItems, initialCheckedIds, false)}
+            </div>
+            <p class="habit-empty" data-habit-empty hidden>Nenhum hábito ainda.</p>
+            <div class="habit-edit-panel" data-habit-edit-panel hidden>
+              <form class="habit-add-form" data-habit-add-form>
+                <input type="text" name="habitLabel" placeholder="Novo hábito" autocomplete="off" />
+                <button class="widget-icon-button is-primary" type="submit" aria-label="Adicionar hábito">+</button>
+              </form>
+              <button class="habit-restore-button" type="button" data-habit-restore>Restaurar lista inicial</button>
             </div>
           </div>
         </section>
@@ -1942,61 +1944,342 @@
       return null;
     }
 
-    const items = Array.from(app.querySelectorAll("[data-habit-item]"));
-    const count = app.querySelector("[data-habit-count]");
-    const resetButton = app.querySelector("[data-habit-reset]");
-    const initialChecked = parseCheckedIndexes(state.checkedText, items.length);
+    const refs = {
+      list: app.querySelector("[data-habit-list]"),
+      count: app.querySelector("[data-habit-count]"),
+      date: app.querySelector("[data-habit-date]"),
+      empty: app.querySelector("[data-habit-empty]"),
+      editPanel: app.querySelector("[data-habit-edit-panel]"),
+      addForm: app.querySelector("[data-habit-add-form]"),
+      editToggle: app.querySelector("[data-habit-edit-toggle]"),
+      reset: app.querySelector("[data-habit-reset]"),
+      restore: app.querySelector("[data-habit-restore]"),
+    };
+    const todayKey = getLocalDateKey(new Date());
+    const initialItems = buildInitialHabitItems(state);
     const storageKey = getWidgetStorageKey("habits");
     const stored = options.preview ? null : readWidgetStorage(storageKey);
-    const active = new Set(
-      Array.isArray(stored?.checked)
-        ? stored.checked.filter((index) => Number.isInteger(index) && index >= 0 && index < items.length)
-        : Array.from(initialChecked)
-    );
+    const storedItems = normalizeStoredHabitItems(stored?.items);
+    const runtime = {
+      isEditing: false,
+      items: storedItems.length ? storedItems : initialItems.map(({ id, label }) => ({ id, label })),
+      checkedByDate: normalizeHabitCheckedByDate(stored, initialItems, todayKey),
+    };
+
+    const getTodayChecked = () => {
+      if (!runtime.checkedByDate[todayKey]) {
+        runtime.checkedByDate[todayKey] = [];
+      }
+      const validIds = new Set(runtime.items.map((item) => item.id));
+      runtime.checkedByDate[todayKey] = runtime.checkedByDate[todayKey].filter((id) =>
+        validIds.has(id)
+      );
+      return new Set(runtime.checkedByDate[todayKey]);
+    };
+
+    const setTodayChecked = (checkedIds) => {
+      runtime.checkedByDate[todayKey] = Array.from(checkedIds);
+    };
 
     const persist = () => {
       if (options.preview) {
         return;
       }
       writeWidgetStorage(storageKey, {
-        checked: Array.from(active).sort((left, right) => left - right),
+        items: runtime.items,
+        checkedByDate: pruneHabitHistory(runtime.checkedByDate),
       });
     };
 
     const render = () => {
-      items.forEach((item, index) => {
-        const isDone = active.has(index);
-        item.classList.toggle("is-done", isDone);
-        item.setAttribute("aria-pressed", String(isDone));
-      });
-      count.textContent = `${active.size}/${items.length}`;
+      const checkedIds = getTodayChecked();
+      refs.list.innerHTML = renderHabitRows(runtime.items, checkedIds, runtime.isEditing);
+      refs.count.textContent = `${checkedIds.size}/${runtime.items.length}`;
+      refs.date.textContent = formatHabitDisplayDate(new Date());
+      refs.empty.hidden = runtime.items.length > 0;
+      refs.editPanel.hidden = !runtime.isEditing;
+      refs.editToggle.classList.toggle("is-active", runtime.isEditing);
+      refs.editToggle.setAttribute("aria-pressed", String(runtime.isEditing));
     };
 
-    items.forEach((item, index) => {
-      item.addEventListener("click", () => {
-        if (active.has(index)) {
-          active.delete(index);
+    refs.list.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-habit-toggle]");
+      const actionButton = event.target.closest("[data-habit-action]");
+
+      if (toggle) {
+        const id = toggle.dataset.habitToggle;
+        const checkedIds = getTodayChecked();
+        if (checkedIds.has(id)) {
+          checkedIds.delete(id);
         } else {
-          active.add(index);
+          checkedIds.add(id);
         }
+        setTodayChecked(checkedIds);
         persist();
         render();
+        return;
+      }
+
+      if (!actionButton) {
+        return;
+      }
+
+      const id = actionButton.dataset.habitId;
+      const action = actionButton.dataset.habitAction;
+      const index = runtime.items.findIndex((item) => item.id === id);
+      if (index === -1) {
+        return;
+      }
+
+      if (action === "delete") {
+        runtime.items.splice(index, 1);
+        Object.keys(runtime.checkedByDate).forEach((dateKey) => {
+          runtime.checkedByDate[dateKey] = runtime.checkedByDate[dateKey].filter(
+            (checkedId) => checkedId !== id
+          );
+        });
+      } else if (action === "move-up" && index > 0) {
+        [runtime.items[index - 1], runtime.items[index]] = [
+          runtime.items[index],
+          runtime.items[index - 1],
+        ];
+      } else if (action === "move-down" && index < runtime.items.length - 1) {
+        [runtime.items[index + 1], runtime.items[index]] = [
+          runtime.items[index],
+          runtime.items[index + 1],
+        ];
+      }
+      persist();
+      render();
+    });
+
+    refs.list.addEventListener("input", (event) => {
+      const input = event.target.closest("[data-habit-label-input]");
+      if (!input) {
+        return;
+      }
+      const item = runtime.items.find((candidate) => candidate.id === input.dataset.habitId);
+      if (!item) {
+        return;
+      }
+      item.label = input.value;
+      persist();
+    });
+
+    refs.list.addEventListener(
+      "blur",
+      (event) => {
+        const input = event.target.closest("[data-habit-label-input]");
+        if (!input) {
+          return;
+        }
+        const item = runtime.items.find((candidate) => candidate.id === input.dataset.habitId);
+        if (!item) {
+          return;
+        }
+        item.label = sanitizeHabitLabel(input.value) || "Novo hábito";
+        persist();
+        render();
+      },
+      true
+    );
+
+    refs.editToggle.addEventListener("click", () => {
+      runtime.isEditing = !runtime.isEditing;
+      render();
+    });
+
+    refs.reset.addEventListener("click", () => {
+      setTodayChecked(new Set());
+      persist();
+      render();
+    });
+
+    refs.restore.addEventListener("click", () => {
+      runtime.items = initialItems.map(({ id, label }) => ({ id, label }));
+      runtime.checkedByDate = {
+        [todayKey]: initialItems.filter((item) => item.done).map((item) => item.id),
+      };
+      persist();
+      render();
+    });
+
+    refs.addForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const input = refs.addForm.elements.habitLabel;
+      const label = sanitizeHabitLabel(input.value);
+      if (!label) {
+        input.focus();
+        return;
+      }
+      runtime.items.push({
+        id: createHabitId(label),
+        label,
+      });
+      input.value = "";
+      persist();
+      render();
+      window.requestAnimationFrame(() => {
+        refs.addForm.elements.habitLabel.focus();
       });
     });
 
-    if (resetButton) {
-      resetButton.addEventListener("click", () => {
-        active.clear();
-        initialChecked.forEach((index) => {
-          active.add(index);
-        });
-        persist();
-        render();
-      });
-    }
-
     render();
     return null;
+  }
+
+  function renderHabitRows(items, checkedIds, isEditing) {
+    return items
+      .map((item, index) => {
+        const isDone = checkedIds.has(item.id);
+        return `
+          <div
+            class="habit-item ${isDone ? "is-done" : ""} ${isEditing ? "is-editing" : ""}"
+            data-habit-row="${escapeHtml(item.id)}"
+          >
+            <button
+              class="habit-toggle"
+              type="button"
+              data-habit-toggle="${escapeHtml(item.id)}"
+              aria-pressed="${isDone ? "true" : "false"}"
+            >
+              <span class="habit-mark"></span>
+              <span class="habit-label">${escapeHtml(item.label)}</span>
+            </button>
+            <input
+              class="habit-edit-input"
+              type="text"
+              value="${escapeHtml(item.label)}"
+              data-habit-label-input
+              data-habit-id="${escapeHtml(item.id)}"
+              aria-label="Nome do hábito"
+              ${isEditing ? "" : "hidden"}
+            />
+            <div class="habit-item-actions" ${isEditing ? "" : "hidden"}>
+              <button
+                class="widget-icon-button"
+                type="button"
+                data-habit-action="move-up"
+                data-habit-id="${escapeHtml(item.id)}"
+                aria-label="Mover para cima"
+                ${index === 0 ? "disabled" : ""}
+              >↑</button>
+              <button
+                class="widget-icon-button"
+                type="button"
+                data-habit-action="move-down"
+                data-habit-id="${escapeHtml(item.id)}"
+                aria-label="Mover para baixo"
+                ${index === items.length - 1 ? "disabled" : ""}
+              >↓</button>
+              <button
+                class="widget-icon-button"
+                type="button"
+                data-habit-action="delete"
+                data-habit-id="${escapeHtml(item.id)}"
+                aria-label="Remover hábito"
+              >×</button>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  }
+
+  function buildInitialHabitItems(state) {
+    const labels = parseHabitLines(state.habitsText);
+    const checked = parseCheckedIndexes(state.checkedText, labels.length);
+    return labels.map((label, index) => ({
+      id: createInitialHabitId(label, index),
+      label,
+      done: checked.has(index),
+    }));
+  }
+
+  function normalizeStoredHabitItems(items) {
+    if (!Array.isArray(items)) {
+      return [];
+    }
+    return items
+      .map((item) => {
+        const label = sanitizeHabitLabel(item?.label);
+        if (!label) {
+          return null;
+        }
+        return {
+          id: typeof item.id === "string" && item.id ? item.id : createHabitId(label),
+          label,
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function normalizeHabitCheckedByDate(stored, initialItems, todayKey) {
+    if (stored?.checkedByDate && typeof stored.checkedByDate === "object") {
+      return Object.fromEntries(
+        Object.entries(stored.checkedByDate).map(([dateKey, checkedIds]) => [
+          dateKey,
+          Array.isArray(checkedIds) ? checkedIds.filter((id) => typeof id === "string") : [],
+        ])
+      );
+    }
+
+    if (Array.isArray(stored?.checked)) {
+      return {
+        [todayKey]: stored.checked.map((index) => initialItems[index]?.id).filter(Boolean),
+      };
+    }
+
+    return {
+      [todayKey]: initialItems.filter((item) => item.done).map((item) => item.id),
+    };
+  }
+
+  function pruneHabitHistory(checkedByDate) {
+    return Object.fromEntries(Object.entries(checkedByDate).slice(-45));
+  }
+
+  function createInitialHabitId(label, index) {
+    return `initial-${index}-${slugifyHabitLabel(label)}`;
+  }
+
+  function createHabitId(label) {
+    return `habit-${slugifyHabitLabel(label)}-${Date.now().toString(36)}-${Math.random()
+      .toString(36)
+      .slice(2, 7)}`;
+  }
+
+  function slugifyHabitLabel(label) {
+    return (
+      sanitizeHabitLabel(label)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 24) || "item"
+    );
+  }
+
+  function sanitizeHabitLabel(value) {
+    return String(value || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  }
+
+  function getLocalDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatHabitDisplayDate(date) {
+    return new Intl.DateTimeFormat("pt-BR", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+    })
+      .format(date)
+      .replaceAll(".", "");
   }
 
   function hydrateCalendar(root, state, options = {}) {
@@ -2484,7 +2767,7 @@
       return "No Notion esse widget continua funcional. Você ajusta a meta com +, -, e reset direto no card.";
     }
     if (widgetKey === "habits") {
-      return "No Notion esse widget continua funcional. Você marca e desmarca os hábitos direto no próprio card.";
+      return "No Notion esse widget continua funcional. Você marca, adiciona, edita, reordena e remove hábitos direto no próprio card.";
     }
     if (widgetKey === "calendar") {
       return "No Notion esse widget continua funcional. Você navega pelos meses e destaca dias direto no próprio card.";

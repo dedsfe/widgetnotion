@@ -1800,9 +1800,31 @@ input[type="range"]::-moz-range-thumb {
   gap: 12px;
 }
 
+.habit-progress-copy {
+  display: grid;
+  gap: 6px;
+}
+
 .habit-progress strong {
   font-size: clamp(2.4rem, 8vw, 3.2rem);
   line-height: 0.92;
+}
+
+.habit-date {
+  color: color-mix(in srgb, var(--widget-text) 58%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-style: var(--widget-meta-style);
+  font-weight: var(--widget-meta-weight);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.habit-actions,
+.habit-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .habit-list {
@@ -1811,14 +1833,14 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .habit-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
   min-height: 58px;
-  padding: 0 18px;
+  padding: 8px 10px 8px 18px;
   border-radius: 18px;
   color: var(--widget-text);
-  cursor: pointer;
   transition:
     transform 160ms ease,
     border-color 160ms ease,
@@ -1828,6 +1850,20 @@ input[type="range"]::-moz-range-thumb {
 
 .habit-item:hover {
   transform: translateY(-1px);
+}
+
+.habit-toggle {
+  display: flex;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  gap: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
 .habit-item.is-done {
@@ -1862,8 +1898,75 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .habit-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-style: var(--widget-body-style);
   font-weight: var(--widget-body-weight);
+}
+
+.habit-edit-input {
+  grid-column: 1 / -1;
+  min-height: 48px;
+}
+
+.habit-edit-input[hidden],
+.habit-item-actions[hidden],
+.habit-edit-panel[hidden],
+.habit-empty[hidden] {
+  display: none !important;
+}
+
+.habit-item-actions {
+  grid-column: 1 / -1;
+  justify-content: end;
+}
+
+.habit-item-actions .widget-icon-button {
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.habit-edit-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.habit-add-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.habit-add-form input {
+  min-height: 46px;
+}
+
+.habit-empty,
+.habit-restore-button {
+  color: color-mix(in srgb, var(--widget-text) 62%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.habit-empty {
+  margin: 0;
+}
+
+.habit-restore-button {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.widget-icon-button.is-active {
+  border-color: color-mix(in srgb, var(--widget-accent) 48%, transparent);
+  background: color-mix(in srgb, var(--widget-accent) 18%, rgba(255, 255, 255, 0.06));
 }
 
 .calendar-summary {
@@ -1988,6 +2091,16 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .widget-align--center .habit-item {
+  justify-items: center;
+  text-align: center;
+}
+
+.widget-align--center .habit-toggle {
+  justify-content: center;
+  text-align: center;
+}
+
+.widget-align--center .habit-item-actions {
   justify-content: center;
 }
 
