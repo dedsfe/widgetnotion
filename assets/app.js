@@ -494,6 +494,229 @@
         },
       ],
     },
+    weather: {
+      name: "Clima",
+      kicker: "Weather Widget",
+      interactive: false,
+      description: "Snapshot visual de clima para dashboards pessoais e páginas iniciais.",
+      defaults: {
+        canvas: "notion-light",
+        style: "minimal",
+        surface: "quiet",
+        texture: "none",
+        font: "sora",
+        align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
+        blur: true,
+        border: "line",
+        shadow: "soft",
+        bg: "#101720",
+        text: "#f4f7fb",
+        accent: "#7bd7ff",
+        radius: 28,
+        padding: 26,
+        titleScale: 1,
+        scale: 1,
+        title: "Clima",
+        kickerText: "",
+        badgeText: "",
+        city: "São Paulo",
+        icon: "☁️",
+        temperature: "24",
+        condition: "Parcialmente nublado",
+        highLabel: "Máx",
+        lowLabel: "Mín",
+        stampLabel: "Momento",
+        highTemp: "28",
+        lowTemp: "19",
+        stamp: "Hoje",
+      },
+      fields: [
+        { key: "title", label: "Título", type: "text", section: "Conteúdo" },
+        { key: "city", label: "Cidade", type: "text", section: "Conteúdo" },
+        { key: "temperature", label: "Temperatura", type: "text", section: "Conteúdo" },
+        { key: "condition", label: "Condição", type: "text", section: "Conteúdo" },
+        { key: "highTemp", label: "Máxima", type: "text", section: "Conteúdo" },
+        { key: "lowTemp", label: "Mínima", type: "text", section: "Conteúdo" },
+        { key: "stamp", label: "Momento", type: "text", section: "Conteúdo" },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
+        { key: "icon", label: "Ícone", type: "text", section: "Texto" },
+        { key: "highLabel", label: "Label máxima", type: "text", section: "Texto" },
+        { key: "lowLabel", label: "Label mínima", type: "text", section: "Texto" },
+        { key: "stampLabel", label: "Label momento", type: "text", section: "Texto" },
+      ],
+    },
+    progress: {
+      name: "Progress",
+      kicker: "Goal Widget",
+      interactive: false,
+      description: "Barra de progresso para metas, leitura, projeto ou hábitos do mês.",
+      defaults: {
+        canvas: "notion-light",
+        style: "soft",
+        surface: "gradient",
+        texture: "none",
+        font: "outfit",
+        align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
+        blur: true,
+        border: "line",
+        shadow: "soft",
+        bg: "#161418",
+        text: "#f7f1ec",
+        accent: "#ff8b5f",
+        radius: 28,
+        padding: 26,
+        titleScale: 1,
+        scale: 1,
+        title: "Monthly Goal",
+        kickerText: "",
+        badgeText: "",
+        current: 72,
+        total: 100,
+        unit: "%",
+        note: "Fechamento do trimestre",
+      },
+      fields: [
+        { key: "title", label: "Título", type: "text", section: "Conteúdo" },
+        {
+          key: "current",
+          label: "Atual",
+          type: "number",
+          section: "Conteúdo",
+          min: 0,
+          max: 9999,
+          step: 1,
+        },
+        {
+          key: "total",
+          label: "Total",
+          type: "number",
+          section: "Conteúdo",
+          min: 1,
+          max: 9999,
+          step: 1,
+        },
+        { key: "unit", label: "Unidade", type: "text", section: "Conteúdo" },
+        { key: "note", label: "Nota", type: "text", section: "Conteúdo" },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
+      ],
+    },
+    habits: {
+      name: "Habit Tracker",
+      kicker: "Interactive Widget",
+      interactive: true,
+      description: "Checklist interativo de hábitos para marcar no próprio embed.",
+      defaults: {
+        canvas: "notion-light",
+        style: "editorial",
+        surface: "quiet",
+        texture: "grid",
+        font: "manrope",
+        align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
+        blur: true,
+        border: "line",
+        shadow: "soft",
+        bg: "#121713",
+        text: "#f3f1e8",
+        accent: "#86f08f",
+        radius: 28,
+        padding: 26,
+        titleScale: 1,
+        scale: 1,
+        title: "Habit Flow",
+        kickerText: "",
+        badgeText: "",
+        introText: "Rotina do dia",
+        habitsText: "Água\nTreino\nLeitura\nDeep work",
+        checkedText: "1,3",
+      },
+      fields: [
+        { key: "title", label: "Título", type: "text", section: "Conteúdo" },
+        { key: "introText", label: "Texto auxiliar", type: "text", section: "Conteúdo" },
+        {
+          key: "habitsText",
+          label: "Hábitos (um por linha)",
+          type: "textarea",
+          section: "Conteúdo",
+        },
+        {
+          key: "checkedText",
+          label: "Marcados inicialmente",
+          type: "text",
+          section: "Conteúdo",
+        },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
+      ],
+    },
+    calendar: {
+      name: "Mini Calendar",
+      kicker: "Planning Widget",
+      interactive: false,
+      description: "Calendário compacto para destacar datas, checkpoints e janelas do mês.",
+      defaults: {
+        canvas: "notion-light",
+        style: "glass",
+        surface: "quiet",
+        texture: "grid",
+        font: "intertight",
+        align: "left",
+        titleWeight: "700",
+        titleItalic: false,
+        bodyWeight: "500",
+        bodyItalic: false,
+        metaWeight: "500",
+        metaItalic: false,
+        blur: true,
+        border: "line",
+        shadow: "soft",
+        bg: "#12161d",
+        text: "#edf3f8",
+        accent: "#8bd4ff",
+        radius: 28,
+        padding: 26,
+        titleScale: 1,
+        scale: 1,
+        title: "Month View",
+        kickerText: "",
+        badgeText: "",
+        monthValue: "2026-05",
+        note: "Sprint checkpoints",
+        highlightsText: "3,7,12,18,24",
+      },
+      fields: [
+        { key: "title", label: "Título", type: "text", section: "Conteúdo" },
+        { key: "monthValue", label: "Mês", type: "month", section: "Conteúdo" },
+        { key: "note", label: "Nota", type: "text", section: "Conteúdo" },
+        {
+          key: "highlightsText",
+          label: "Dias destacados",
+          type: "text",
+          section: "Conteúdo",
+        },
+        { key: "kickerText", label: "Texto superior", type: "text", section: "Texto" },
+        { key: "badgeText", label: "Badge", type: "text", section: "Texto" },
+      ],
+    },
     quote: {
       name: "Daily Note",
       kicker: "Editorial Widget",
@@ -674,6 +897,8 @@
         cleanup = hydratePomodoro(root, state);
       } else if (widgetKey === "countdown") {
         cleanup = hydrateCountdown(root, state);
+      } else if (widgetKey === "habits") {
+        cleanup = hydrateHabits(root, state);
       }
     };
 
@@ -835,7 +1060,7 @@
   }
 
   function isCompactField(field) {
-    return ["checkbox", "color", "number", "range", "select", "datetime-local", "text"].includes(field.type);
+    return ["checkbox", "color", "number", "range", "select", "datetime-local", "month", "text"].includes(field.type);
   }
 
   function renderField(field, value) {
@@ -1120,6 +1345,149 @@
       `;
     }
 
+    if (widgetKey === "weather") {
+      return `
+        <section class="${shellClass}">
+          <div class="widget-frame widget-frame--weather">
+            <header class="widget-head">
+              <div class="widget-meta">
+                ${renderOptionalText("span", "widget-kicker", state.kickerText)}
+                <h1 class="widget-title">${escapeHtml(state.title)}</h1>
+              </div>
+              ${renderOptionalText("span", "widget-chip", state.badgeText)}
+            </header>
+            <div class="weather-hero">
+              <div class="weather-copy">
+                <span class="weather-city">${escapeHtml(state.city)}</span>
+                <strong class="weather-temp">${escapeHtml(state.temperature)}°</strong>
+                <p class="weather-condition">${escapeHtml(state.condition)}</p>
+              </div>
+              <div class="weather-icon">${escapeHtml(state.icon)}</div>
+            </div>
+            <div class="weather-stats">
+              <div class="weather-stat">
+                <span class="weather-stat-label">${escapeHtml(state.highLabel || "Máx")}</span>
+                <strong>${escapeHtml(state.highTemp)}°</strong>
+              </div>
+              <div class="weather-stat">
+                <span class="weather-stat-label">${escapeHtml(state.lowLabel || "Mín")}</span>
+                <strong>${escapeHtml(state.lowTemp)}°</strong>
+              </div>
+              <div class="weather-stat">
+                <span class="weather-stat-label">${escapeHtml(state.stampLabel || "Momento")}</span>
+                <strong>${escapeHtml(state.stamp)}</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    if (widgetKey === "progress") {
+      const percent = getProgressPercent(state.current, state.total);
+      return `
+        <section class="${shellClass}">
+          <div class="widget-frame widget-frame--progress">
+            <header class="widget-head">
+              <div class="widget-meta">
+                ${renderOptionalText("span", "widget-kicker", state.kickerText)}
+                <h1 class="widget-title">${escapeHtml(state.title)}</h1>
+              </div>
+              ${renderOptionalText("span", "widget-chip", state.badgeText)}
+            </header>
+            <div class="progress-reading">
+              <strong class="progress-numerator">${escapeHtml(String(state.current))}${escapeHtml(state.unit)}</strong>
+              <span class="progress-percent">${percent}%</span>
+            </div>
+            <div class="progress-bar">
+              <span class="progress-bar-fill" style="width: ${percent}%"></span>
+            </div>
+            ${renderOptionalText("p", "progress-note", state.note)}
+          </div>
+        </section>
+      `;
+    }
+
+    if (widgetKey === "habits") {
+      const habits = parseHabitLines(state.habitsText);
+      const checked = parseCheckedIndexes(state.checkedText, habits.length);
+      return `
+        <section class="${shellClass}">
+          <div class="widget-frame widget-frame--habits" data-habit-app data-checked="${escapeHtml(Array.from(checked).join(","))}">
+            <header class="widget-head">
+              <div class="widget-meta">
+                ${renderOptionalText("span", "widget-kicker", state.kickerText)}
+                <h1 class="widget-title">${escapeHtml(state.title)}</h1>
+              </div>
+              ${renderOptionalText("span", "widget-chip", state.badgeText)}
+            </header>
+            ${renderOptionalText("p", "habit-intro", state.introText)}
+            <div class="habit-progress">
+              <strong data-habit-count>${checked.size}/${habits.length}</strong>
+            </div>
+            <div class="habit-list">
+              ${habits
+                .map(
+                  (habit, index) => `
+                    <button
+                      class="habit-item ${checked.has(index) ? "is-done" : ""}"
+                      type="button"
+                      data-habit-item="${index}"
+                      aria-pressed="${checked.has(index) ? "true" : "false"}"
+                    >
+                      <span class="habit-mark"></span>
+                      <span class="habit-label">${escapeHtml(habit)}</span>
+                    </button>
+                  `
+                )
+                .join("")}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    if (widgetKey === "calendar") {
+      const calendar = buildCalendarModel(state.monthValue, state.highlightsText);
+      return `
+        <section class="${shellClass}">
+          <div class="widget-frame widget-frame--calendar">
+            <header class="widget-head">
+              <div class="widget-meta">
+                ${renderOptionalText("span", "widget-kicker", state.kickerText)}
+                <h1 class="widget-title">${escapeHtml(state.title)}</h1>
+              </div>
+              ${renderOptionalText("span", "widget-chip", state.badgeText)}
+            </header>
+            <div class="calendar-summary">
+              <strong class="calendar-month-label">${escapeHtml(calendar.label)}</strong>
+              ${renderOptionalText("span", "calendar-note", state.note)}
+            </div>
+            <div class="calendar-weekdays">
+              ${calendar.weekdays.map((day) => `<span>${escapeHtml(day)}</span>`).join("")}
+            </div>
+            <div class="calendar-grid">
+              ${calendar.days
+                .map((day) => {
+                  if (!day.inMonth) {
+                    return `<span class="calendar-day calendar-day--empty"></span>`;
+                  }
+                  const className = [
+                    "calendar-day",
+                    day.isToday ? "is-today" : "",
+                    day.isHighlighted ? "is-highlighted" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+                  return `<span class="${className}">${day.day}</span>`;
+                })
+                .join("")}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
     return `
       <section class="${shellClass}">
         <div class="widget-frame">
@@ -1314,6 +1682,40 @@
     };
   }
 
+  function hydrateHabits(root, state) {
+    const app = root.querySelector("[data-habit-app]");
+    if (!app) {
+      return null;
+    }
+
+    const items = Array.from(app.querySelectorAll("[data-habit-item]"));
+    const count = app.querySelector("[data-habit-count]");
+    const active = parseCheckedIndexes(state.checkedText, items.length);
+
+    const render = () => {
+      items.forEach((item, index) => {
+        const isDone = active.has(index);
+        item.classList.toggle("is-done", isDone);
+        item.setAttribute("aria-pressed", String(isDone));
+      });
+      count.textContent = `${active.size}/${items.length}`;
+    };
+
+    items.forEach((item, index) => {
+      item.addEventListener("click", () => {
+        if (active.has(index)) {
+          active.delete(index);
+        } else {
+          active.add(index);
+        }
+        render();
+      });
+    });
+
+    render();
+    return null;
+  }
+
   function getPomodoroMode(mode) {
     return Object.prototype.hasOwnProperty.call(POMODORO_RUNTIME_MODES, mode) ? mode : "focus";
   }
@@ -1409,9 +1811,81 @@
     return [prefix, suffix].filter(Boolean).join(" ").trim();
   }
 
+  function getProgressPercent(current, total) {
+    const safeCurrent = Math.max(0, Number(current) || 0);
+    const safeTotal = Math.max(1, Number(total) || 1);
+    return Math.min(100, Math.max(0, Math.round((safeCurrent / safeTotal) * 100)));
+  }
+
+  function parseHabitLines(value) {
+    return String(value || "")
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+  }
+
+  function parseCheckedIndexes(value, size) {
+    return new Set(
+      String(value || "")
+        .split(",")
+        .map((item) => Number(item.trim()) - 1)
+        .filter((index) => Number.isInteger(index) && index >= 0 && index < size)
+    );
+  }
+
+  function buildCalendarModel(monthValue, highlightsText) {
+    const [yearString, monthString] = String(monthValue || "").split("-");
+    const year = Number(yearString) || new Date().getFullYear();
+    const monthIndex = (Number(monthString) || 1) - 1;
+    const firstDay = new Date(year, monthIndex, 1);
+    const lastDay = new Date(year, monthIndex + 1, 0);
+    const firstWeekday = (firstDay.getDay() + 6) % 7;
+    const daysInMonth = lastDay.getDate();
+    const highlightSet = new Set(
+      String(highlightsText || "")
+        .split(",")
+        .map((item) => Number(item.trim()))
+        .filter((day) => Number.isInteger(day) && day >= 1 && day <= daysInMonth)
+    );
+    const today = new Date();
+    const isCurrentMonth =
+      today.getFullYear() === year && today.getMonth() === monthIndex;
+    const days = [];
+
+    for (let index = 0; index < firstWeekday; index += 1) {
+      days.push({ inMonth: false });
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      days.push({
+        inMonth: true,
+        day,
+        isToday: isCurrentMonth && today.getDate() === day,
+        isHighlighted: highlightSet.has(day),
+      });
+    }
+
+    while (days.length % 7 !== 0) {
+      days.push({ inMonth: false });
+    }
+
+    return {
+      label: new Intl.DateTimeFormat("pt-BR", {
+        month: "long",
+        year: "numeric",
+      }).format(firstDay),
+      weekdays: ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"],
+      days,
+    };
+  }
+
   function getEmbedBehaviorCopy(widgetKey) {
-    if (WIDGETS[widgetKey].interactive) {
+    if (widgetKey === "pomodoro") {
       return "No Notion esse widget continua funcional. Start, pause, reset e ajuste de tempo acontecem no próprio card.";
+    }
+    if (widgetKey === "habits") {
+      return "No Notion esse widget continua funcional. Você marca e desmarca os hábitos direto no próprio card.";
     }
     return "No Notion esse widget é só leitura. Mudanças de tempo, estado, texto e visual são feitas aqui no editor.";
   }
@@ -1427,6 +1901,18 @@
       return 540;
     }
     if (widgetKey === "countdown") {
+      return 620;
+    }
+    if (widgetKey === "weather") {
+      return 560;
+    }
+    if (widgetKey === "progress") {
+      return 580;
+    }
+    if (widgetKey === "habits") {
+      return 560;
+    }
+    if (widgetKey === "calendar") {
       return 620;
     }
     return 560;

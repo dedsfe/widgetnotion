@@ -324,9 +324,41 @@ code {
     linear-gradient(135deg, #1a1310 0%, #0d0b0a 72%);
 }
 
+.widget-card-weather {
+  background:
+    radial-gradient(circle at 78% 16%, rgba(123, 215, 255, 0.24), transparent 24%),
+    radial-gradient(circle at 14% 82%, rgba(115, 145, 255, 0.14), transparent 20%),
+    linear-gradient(135deg, #111b25 0%, #0b1016 72%);
+}
+
+.widget-card-progress {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 139, 95, 0.24), transparent 22%),
+    radial-gradient(circle at 84% 72%, rgba(255, 209, 113, 0.12), transparent 20%),
+    linear-gradient(135deg, #1b1313 0%, #100c0c 72%);
+}
+
+.widget-card-habits {
+  background:
+    radial-gradient(circle at 82% 16%, rgba(134, 240, 143, 0.18), transparent 24%),
+    radial-gradient(circle at 12% 88%, rgba(211, 255, 188, 0.1), transparent 20%),
+    linear-gradient(135deg, #111712 0%, #0a0d0a 74%);
+}
+
+.widget-card-calendar {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(139, 212, 255, 0.22), transparent 24%),
+    radial-gradient(circle at 84% 18%, rgba(117, 132, 255, 0.12), transparent 20%),
+    linear-gradient(135deg, #10161e 0%, #090d11 72%);
+}
+
 .preview-pomodoro,
 .preview-countdown,
-.preview-quote {
+.preview-quote,
+.preview-weather,
+.preview-progress,
+.preview-habits,
+.preview-calendar {
   display: grid;
   align-items: center;
   gap: 18px;
@@ -446,6 +478,128 @@ code {
   margin: 0;
   font-size: 1.2rem;
   line-height: 1.5;
+}
+
+.preview-weather {
+  align-content: space-between;
+  min-height: 140px;
+}
+
+.mini-weather-top,
+.mini-weather-bottom,
+.mini-progress-row,
+.mini-habit-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mini-weather-top strong {
+  font-size: 3rem;
+  letter-spacing: -0.08em;
+  line-height: 0.88;
+}
+
+.mini-weather-top span {
+  font-size: 2.4rem;
+}
+
+.mini-weather-bottom {
+  align-items: end;
+}
+
+.mini-weather-bottom small,
+.mini-progress-row small,
+.mini-habit-item small,
+.mini-calendar-weekdays span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.preview-progress {
+  align-content: center;
+}
+
+.mini-progress-row strong {
+  font-size: 2.6rem;
+  letter-spacing: -0.08em;
+  line-height: 0.9;
+}
+
+.mini-progress-bar {
+  overflow: hidden;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mini-progress-bar span {
+  display: block;
+  width: 72%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(255, 139, 95, 0.9), rgba(255, 200, 119, 0.96));
+}
+
+.preview-habits {
+  gap: 10px;
+}
+
+.mini-habit-item {
+  min-height: 44px;
+  justify-content: start;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mini-habit-item span {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 5px;
+  background: transparent;
+}
+
+.mini-habit-item.is-done span {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.preview-calendar {
+  gap: 16px;
+}
+
+.mini-calendar-weekdays,
+.mini-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mini-calendar-weekdays span,
+.mini-calendar-grid span {
+  display: grid;
+  place-items: center;
+}
+
+.mini-calendar-weekdays span {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+}
+
+.mini-calendar-grid span {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.82rem;
+}
+
+.mini-calendar-grid .is-marked {
+  background: color-mix(in srgb, var(--accent) 24%, rgba(255, 255, 255, 0.04));
+  color: var(--text);
 }
 
 .editor-header {
@@ -1433,6 +1587,321 @@ input[type="range"]::-moz-range-thumb {
   letter-spacing: 0.12em;
 }
 
+.widget-frame--weather,
+.widget-frame--progress,
+.widget-frame--habits,
+.widget-frame--calendar {
+  gap: 22px;
+}
+
+.weather-hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.weather-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.weather-city,
+.weather-stat-label,
+.habit-intro,
+.calendar-note,
+.calendar-weekdays span {
+  color: color-mix(in srgb, var(--widget-text) 62%, transparent);
+  font-family: var(--font-mono);
+  font-style: var(--widget-meta-style);
+  font-weight: var(--widget-meta-weight);
+}
+
+.weather-city {
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.weather-temp {
+  font-size: clamp(4rem, 14vw, 6.4rem);
+  line-height: 0.86;
+  letter-spacing: -0.1em;
+}
+
+.weather-condition {
+  margin: 0;
+  max-width: 24ch;
+  font-size: 1rem;
+  font-style: var(--widget-body-style);
+  font-weight: var(--widget-body-weight);
+  line-height: 1.5;
+}
+
+.weather-icon {
+  flex: 0 0 auto;
+  font-size: clamp(3rem, 10vw, 5rem);
+  line-height: 1;
+}
+
+.weather-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.weather-stat,
+.habit-item,
+.calendar-day {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.weather-stat {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.weather-stat strong,
+.progress-percent,
+.habit-progress strong,
+.calendar-month-label {
+  letter-spacing: -0.05em;
+}
+
+.weather-stat-label,
+.calendar-weekdays span {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.progress-reading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.progress-numerator {
+  font-size: clamp(3.6rem, 11vw, 5rem);
+  line-height: 0.9;
+  letter-spacing: -0.1em;
+}
+
+.progress-percent {
+  color: color-mix(in srgb, var(--widget-text) 64%, transparent);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+}
+
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.progress-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--widget-accent) 90%, white 10%),
+    color-mix(in srgb, var(--widget-accent) 68%, white 32%)
+  );
+}
+
+.progress-note {
+  margin: 0;
+  color: color-mix(in srgb, var(--widget-text) 66%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-style: var(--widget-body-style);
+  font-weight: var(--widget-body-weight);
+  line-height: 1.6;
+}
+
+.habit-intro {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.habit-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.habit-progress strong {
+  font-size: clamp(2.4rem, 8vw, 3.2rem);
+  line-height: 0.92;
+}
+
+.habit-list {
+  display: grid;
+  gap: 10px;
+}
+
+.habit-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 58px;
+  padding: 0 18px;
+  border-radius: 18px;
+  color: var(--widget-text);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.habit-item:hover {
+  transform: translateY(-1px);
+}
+
+.habit-item.is-done {
+  border-color: color-mix(in srgb, var(--widget-accent) 46%, transparent);
+  background: color-mix(in srgb, var(--widget-accent) 16%, rgba(255, 255, 255, 0.05));
+}
+
+.habit-mark {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 6px;
+  flex: 0 0 auto;
+}
+
+.habit-item.is-done .habit-mark {
+  border-color: transparent;
+  background: var(--widget-accent);
+}
+
+.habit-item.is-done .habit-mark::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  width: 4px;
+  height: 9px;
+  border-right: 2px solid #071010;
+  border-bottom: 2px solid #071010;
+  transform: rotate(42deg);
+}
+
+.habit-label {
+  font-style: var(--widget-body-style);
+  font-weight: var(--widget-body-weight);
+}
+
+.calendar-summary {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.calendar-month-label {
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  text-transform: capitalize;
+}
+
+.calendar-note {
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-day {
+  display: grid;
+  place-items: center;
+  min-height: 56px;
+  border-radius: 18px;
+  font-size: 0.94rem;
+  font-style: var(--widget-body-style);
+  font-weight: var(--widget-body-weight);
+}
+
+.calendar-day--empty {
+  border-color: transparent;
+  background: transparent;
+}
+
+.calendar-day.is-highlighted {
+  border-color: color-mix(in srgb, var(--widget-accent) 34%, transparent);
+  background: color-mix(in srgb, var(--widget-accent) 16%, rgba(255, 255, 255, 0.05));
+}
+
+.calendar-day.is-today {
+  border-color: transparent;
+  background: var(--widget-text);
+  color: var(--widget-bg);
+}
+
+.widget-blur-on .weather-stat,
+.widget-blur-on .habit-item,
+.widget-blur-on .calendar-day {
+  backdrop-filter: blur(14px);
+}
+
+.widget-blur-off .weather-stat,
+.widget-blur-off .habit-item,
+.widget-blur-off .calendar-day {
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
+.widget-align--center .weather-hero,
+.widget-align--center .weather-stats,
+.widget-align--center .progress-reading,
+.widget-align--center .calendar-summary {
+  text-align: center;
+}
+
+.widget-align--center .weather-hero,
+.widget-align--center .progress-reading,
+.widget-align--center .calendar-summary,
+.widget-align--center .habit-progress {
+  flex-direction: column;
+  align-items: center;
+}
+
+.widget-align--center .weather-copy,
+.widget-align--center .habit-list {
+  justify-items: center;
+}
+
+.widget-align--center .weather-stats {
+  grid-template-columns: 1fr;
+}
+
+.widget-align--center .habit-item {
+  justify-content: center;
+}
+
 .font-grotesk {
   --widget-font: var(--font-sans);
 }
@@ -1513,6 +1982,10 @@ input[type="range"]::-moz-range-thumb {
   #preview-frame {
     min-height: 520px;
   }
+
+  .weather-stats {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1554,5 +2027,25 @@ input[type="range"]::-moz-range-thumb {
 
   .quote-body {
     font-size: 1.8rem;
+  }
+
+  .weather-hero,
+  .progress-reading,
+  .calendar-summary {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .weather-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    gap: 8px;
+  }
+
+  .calendar-day {
+    min-height: 42px;
   }
 }
